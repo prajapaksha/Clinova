@@ -2,6 +2,7 @@ import 'dotenv/config';
 import { PrismaClient } from '@prisma/client';
 import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3';
 import { randomUUID } from 'crypto';
+import * as bcrypt from 'bcrypt';
 
 const dbUrl = (process.env['DATABASE_URL'] ?? 'file:./dev.db').replace(/^file:/, '');
 const adapter = new PrismaBetterSqlite3({ url: dbUrl });
@@ -877,9 +878,18 @@ const patients = [
   },
 ];
 
+const STAFF_USERS = [
+  { email: 'admin@clinova.health',      password: 'Admin@2026',      firstName: 'Alex',    lastName: 'Rivera',   role: 'ADMIN' },
+  { email: 'dr.chen@clinova.health',    password: 'Doctor@2026',     firstName: 'Wei',     lastName: 'Chen',     role: 'PHYSICIAN' },
+  { email: 'dr.patel@clinova.health',   password: 'Doctor@2026',     firstName: 'Ananya',  lastName: 'Patel',    role: 'PHYSICIAN' },
+  { email: 'nurse.kim@clinova.health',  password: 'Nurse@2026',      firstName: 'Ji-Yeon', lastName: 'Kim',      role: 'NURSE' },
+  { email: 'reception@clinova.health',  password: 'Staff@2026',      firstName: 'Marcus',  lastName: 'Grant',    role: 'STAFF' },
+];
+
 async function main() {
-  console.log('🗑  Clearing existing patients…');
+  console.log('🗑  Clearing existing data…');
   await prisma.patient.deleteMany({});
+  await prisma.staff.deleteMany({});
 
   console.log(`🌱 Seeding ${patients.length} patients…\n`);
   for (const data of patients) {
@@ -895,6 +905,14 @@ async function main() {
   }
 
   console.log(`\n✅ Seeded ${patients.length} patients successfully.`);
+
+  console.log('\n👥 Seeding staff users…\n');
+  for (const u of STAFF_USERS) {
+    const passwordHash = await bcrypt.hash(u.password, 10);
+    await prisma.staff.create({ data: { email: u.email, passwordHash, firstName: u.firstName, lastName: u.lastName, role: u.role } });
+    console.log(`  ✓ [${u.role.padEnd(9)}]  ${u.firstName} ${u.lastName}  <${u.email}>  pw: ${u.password}`);
+  }
+  console.log(`\n✅ Seeded ${STAFF_USERS.length} staff users successfully.`);
 }
 
 main()

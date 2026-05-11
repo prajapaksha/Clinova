@@ -8,9 +8,12 @@ importers:
 
   .:
     dependencies:
+      '@angular/animations':
+        specifier: ~21.2.12
+        version: 21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))
       '@angular/cdk':
         specifier: ^21.2.10
-        version: 21.2.10(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@angular/platform-browser@21.2.12(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(rxjs@7.8.2)
+        version: 21.2.10(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(rxjs@7.8.2)
       '@angular/common':
         specifier: ~21.2.0
         version: 21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2)
@@ -22,16 +25,16 @@ importers:
         version: 21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)
       '@angular/forms':
         specifier: ~21.2.0
-        version: 21.2.12(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@angular/platform-browser@21.2.12(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(rxjs@7.8.2)
+        version: 21.2.12(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(rxjs@7.8.2)
       '@angular/material':
         specifier: ^21.2.10
-        version: 21.2.10(df9e878c9725ed0f80f9c8e8ac8e5787)
+        version: 21.2.10(bf86f62ab7bb5f96d0640ecbc9c415e0)
       '@angular/platform-browser':
         specifier: ~21.2.0
-        version: 21.2.12(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))
+        version: 21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))
       '@angular/router':
         specifier: ~21.2.0
-        version: 21.2.12(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@angular/platform-browser@21.2.12(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(rxjs@7.8.2)
+        version: 21.2.12(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(rxjs@7.8.2)
       '@nestjs/common':
         specifier: ^11.0.0
         version: 11.1.19(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.1.14)(rxjs@7.8.2)
@@ -95,10 +98,10 @@ importers:
     devDependencies:
       '@analogjs/vite-plugin-angular':
         specifier: ~2.1.2
-        version: 2.1.3(@angular/build@21.2.10(@angular/compiler-cli@21.2.12(@angular/compiler@21.2.12)(typescript@5.9.3))(@angular/compiler@21.2.12)(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@angular/platform-browser@21.2.12(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)(@types/node@20.19.9)(chokidar@5.0.0)(jiti@2.7.0)(less@4.5.1)(lightningcss@1.32.0)(postcss@8.5.14)(sass-embedded@1.99.0)(terser@5.47.1)(tslib@2.8.1)(typescript@5.9.3)(vitest@4.1.5)(yaml@2.8.0))
+        version: 2.1.3(@angular/build@21.2.10(@angular/compiler-cli@21.2.12(@angular/compiler@21.2.12)(typescript@5.9.3))(@angular/compiler@21.2.12)(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)(@types/node@20.19.9)(chokidar@5.0.0)(jiti@2.7.0)(less@4.5.1)(lightningcss@1.32.0)(postcss@8.5.14)(sass-embedded@1.99.0)(terser@5.47.1)(tslib@2.8.1)(typescript@5.9.3)(vitest@4.1.5)(yaml@2.8.0))
       '@analogjs/vitest-angular':
         specifier: ~2.1.2
-        version: 2.1.3(@analogjs/vite-plugin-angular@2.1.3(@angular/build@21.2.10(@angular/compiler-cli@21.2.12(@angular/compiler@21.2.12)(typescript@5.9.3))(@angular/compiler@21.2.12)(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@angular/platform-browser@21.2.12(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)(@types/node@20.19.9)(chokidar@5.0.0)(jiti@2.7.0)(less@4.5.1)(lightningcss@1.32.0)(postcss@8.5.14)(sass-embedded@1.99.0)(terser@5.47.1)(tslib@2.8.1)(typescript@5.9.3)(vitest@4.1.5)(yaml@2.8.0)))(@angular-devkit/architect@0.2102.10(chokidar@5.0.0))(vitest@4.1.5)
+        version: 2.1.3(@analogjs/vite-plugin-angular@2.1.3(@angular/build@21.2.10(@angular/compiler-cli@21.2.12(@angular/compiler@21.2.12)(typescript@5.9.3))(@angular/compiler@21.2.12)(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)(@types/node@20.19.9)(chokidar@5.0.0)(jiti@2.7.0)(less@4.5.1)(lightningcss@1.32.0)(postcss@8.5.14)(sass-embedded@1.99.0)(terser@5.47.1)(tslib@2.8.1)(typescript@5.9.3)(vitest@4.1.5)(yaml@2.8.0)))(@angular-devkit/architect@0.2102.10(chokidar@5.0.0))(vitest@4.1.5)
       '@angular-devkit/core':
         specifier: ~21.2.0
         version: 21.2.10(chokidar@5.0.0)
@@ -107,7 +110,7 @@ importers:
         version: 21.2.10(chokidar@5.0.0)
       '@angular/build':
         specifier: ~21.2.0
-        version: 21.2.10(@angular/compiler-cli@21.2.12(@angular/compiler@21.2.12)(typescript@5.9.3))(@angular/compiler@21.2.12)(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@angular/platform-browser@21.2.12(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)(@types/node@20.19.9)(chokidar@5.0.0)(jiti@2.7.0)(less@4.5.1)(lightningcss@1.32.0)(postcss@8.5.14)(sass-embedded@1.99.0)(terser@5.47.1)(tslib@2.8.1)(typescript@5.9.3)(vitest@4.1.5)(yaml@2.8.0)
+        version: 21.2.10(@angular/compiler-cli@21.2.12(@angular/compiler@21.2.12)(typescript@5.9.3))(@angular/compiler@21.2.12)(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)(@types/node@20.19.9)(chokidar@5.0.0)(jiti@2.7.0)(less@4.5.1)(lightningcss@1.32.0)(postcss@8.5.14)(sass-embedded@1.99.0)(terser@5.47.1)(tslib@2.8.1)(typescript@5.9.3)(vitest@4.1.5)(yaml@2.8.0)
       '@angular/cli':
         specifier: ~21.2.0
         version: 21.2.10(@types/node@20.19.9)(chokidar@5.0.0)
@@ -128,7 +131,7 @@ importers:
         version: 11.1.19(@nestjs/common@11.1.19(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.1.14)(rxjs@7.8.2))(@nestjs/core@11.1.19)(@nestjs/platform-express@11.1.19)
       '@nx/angular':
         specifier: 22.7.0
-        version: 22.7.0(8cfa5c01ffe7486e21201fe5acd958a1)
+        version: 22.7.0(c014347b5b0a9baf1645e049c247d887)
       '@nx/devkit':
         specifier: 22.7.0
         version: 22.7.0(nx@22.7.0(@swc-node/register@1.11.1(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)(@swc/core@1.15.8(@swc/helpers@0.5.18))(@swc/types@0.1.26)(typescript@5.9.3))(@swc/core@1.15.8(@swc/helpers@0.5.18)))
@@ -183,6 +186,9 @@ importers:
       '@swc/helpers':
         specifier: 0.5.18
         version: 0.5.18
+      '@types/bcrypt':
+        specifier: ^6.0.0
+        version: 6.0.0
       '@types/better-sqlite3':
         specifier: ^7.6.13
         version: 7.6.13
@@ -195,6 +201,12 @@ importers:
       '@types/node':
         specifier: 20.19.9
         version: 20.19.9
+      '@types/passport-jwt':
+        specifier: ^4.0.1
+        version: 4.0.1
+      '@types/passport-local':
+        specifier: ^1.0.38
+        version: 1.0.38
       '@typescript-eslint/utils':
         specifier: ^8.40.0
         version: 8.59.2(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3)
@@ -431,6 +443,12 @@ packages:
       '@typescript-eslint/utils': ^7.11.0 || ^8.0.0
       eslint: ^8.57.0 || ^9.0.0 || ^10.0.0
       typescript: '*'
+
+  '@angular/animations@21.2.12':
+    resolution: {integrity: sha512-91mgQI15qStL38LijoKyAvNo61wB5rUpwqDVHoJQeISUChVYOY4hiofO6hW6ERg8MHQKUTyOrPDg5cN4yTcp9A==}
+    engines: {node: ^20.19.0 || ^22.12.0 || >=24.0.0}
+    peerDependencies:
+      '@angular/core': 21.2.12
 
   '@angular/build@21.2.10':
     resolution: {integrity: sha512-jnFN56y9tyqsZbbDueEzITYAfug7bSF9KcOi9fhPppbmTdjSN5xrXXltDSqwgRdvGtcctZ55NunT7sGF7+ubXQ==}
@@ -3595,6 +3613,9 @@ packages:
   '@types/babel__traverse@7.28.0':
     resolution: {integrity: sha512-8PvcXf70gTDZBgt9ptxJ8elBeBjcLOAcOtoO/mPJjtji1+CdGbHgm77om1GrsPxsiE+uXIpNSK64UYaIwQXd4Q==}
 
+  '@types/bcrypt@6.0.0':
+    resolution: {integrity: sha512-/oJGukuH3D2+D+3H4JWLaAsJ/ji86dhRidzZ/Od7H/i8g+aCmvkeCc6Ni/f9uxGLSQVCRZkX2/lqEFG2BvWtlQ==}
+
   '@types/better-sqlite3@7.6.13':
     resolution: {integrity: sha512-NMv9ASNARoKksWtsq/SHakpYAYnhBrQgGD8zkLYk/jaK8jUGn08CfEdTRgYhMypUQAfzSP8W6gNLe0q19/t4VA==}
 
@@ -3681,6 +3702,18 @@ packages:
 
   '@types/parse-json@4.0.2':
     resolution: {integrity: sha512-dISoDXWWQwUquiKsyZ4Ng+HX2KsPL7LyHKHQwgGFEA3IaKac4Obd+h2a/a6waisAoepJlBcx9paWqjA8/HVjCw==}
+
+  '@types/passport-jwt@4.0.1':
+    resolution: {integrity: sha512-Y0Ykz6nWP4jpxgEUYq8NoVZeCQPo1ZndJLfapI249g1jHChvRfZRO/LS3tqu26YgAS/laI1qx98sYGz0IalRXQ==}
+
+  '@types/passport-local@1.0.38':
+    resolution: {integrity: sha512-nsrW4A963lYE7lNTv9cr5WmiUD1ibYJvWrpE13oxApFsRt77b0RdtZvKbCdNIY4v/QZ6TRQWaDDEwV1kCTmcXg==}
+
+  '@types/passport-strategy@0.2.38':
+    resolution: {integrity: sha512-GC6eMqqojOooq993Tmnmp7AUTbbQSgilyvpCYQjT+H6JfG/g6RGc7nXEniZlp0zyKJ0WUdOiZWLBZft9Yug1uA==}
+
+  '@types/passport@1.0.17':
+    resolution: {integrity: sha512-aciLyx+wDwT2t2/kJGJR2AEeBz0nJU4WuRX04Wu9Dqc5lSUtwu0WERPHYsLhF9PtseiAMPBGNUOtFjxZ56prsg==}
 
   '@types/qs@6.15.1':
     resolution: {integrity: sha512-GZHUBZR9hckSUhrxmp1nG6NwdpM9fCunJwyThLW1X3AyHgd9IlHb6VANpQQqDr2o/qQp6McZ3y/IA2rVzKzSbw==}
@@ -8931,15 +8964,15 @@ snapshots:
       '@jridgewell/gen-mapping': 0.3.13
       '@jridgewell/trace-mapping': 0.3.31
 
-  '@analogjs/vite-plugin-angular@2.1.3(@angular/build@21.2.10(@angular/compiler-cli@21.2.12(@angular/compiler@21.2.12)(typescript@5.9.3))(@angular/compiler@21.2.12)(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@angular/platform-browser@21.2.12(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)(@types/node@20.19.9)(chokidar@5.0.0)(jiti@2.7.0)(less@4.5.1)(lightningcss@1.32.0)(postcss@8.5.14)(sass-embedded@1.99.0)(terser@5.47.1)(tslib@2.8.1)(typescript@5.9.3)(vitest@4.1.5)(yaml@2.8.0))':
+  '@analogjs/vite-plugin-angular@2.1.3(@angular/build@21.2.10(@angular/compiler-cli@21.2.12(@angular/compiler@21.2.12)(typescript@5.9.3))(@angular/compiler@21.2.12)(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)(@types/node@20.19.9)(chokidar@5.0.0)(jiti@2.7.0)(less@4.5.1)(lightningcss@1.32.0)(postcss@8.5.14)(sass-embedded@1.99.0)(terser@5.47.1)(tslib@2.8.1)(typescript@5.9.3)(vitest@4.1.5)(yaml@2.8.0))':
     dependencies:
       ts-morph: 21.0.1
     optionalDependencies:
-      '@angular/build': 21.2.10(@angular/compiler-cli@21.2.12(@angular/compiler@21.2.12)(typescript@5.9.3))(@angular/compiler@21.2.12)(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@angular/platform-browser@21.2.12(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)(@types/node@20.19.9)(chokidar@5.0.0)(jiti@2.7.0)(less@4.5.1)(lightningcss@1.32.0)(postcss@8.5.14)(sass-embedded@1.99.0)(terser@5.47.1)(tslib@2.8.1)(typescript@5.9.3)(vitest@4.1.5)(yaml@2.8.0)
+      '@angular/build': 21.2.10(@angular/compiler-cli@21.2.12(@angular/compiler@21.2.12)(typescript@5.9.3))(@angular/compiler@21.2.12)(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)(@types/node@20.19.9)(chokidar@5.0.0)(jiti@2.7.0)(less@4.5.1)(lightningcss@1.32.0)(postcss@8.5.14)(sass-embedded@1.99.0)(terser@5.47.1)(tslib@2.8.1)(typescript@5.9.3)(vitest@4.1.5)(yaml@2.8.0)
 
-  '@analogjs/vitest-angular@2.1.3(@analogjs/vite-plugin-angular@2.1.3(@angular/build@21.2.10(@angular/compiler-cli@21.2.12(@angular/compiler@21.2.12)(typescript@5.9.3))(@angular/compiler@21.2.12)(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@angular/platform-browser@21.2.12(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)(@types/node@20.19.9)(chokidar@5.0.0)(jiti@2.7.0)(less@4.5.1)(lightningcss@1.32.0)(postcss@8.5.14)(sass-embedded@1.99.0)(terser@5.47.1)(tslib@2.8.1)(typescript@5.9.3)(vitest@4.1.5)(yaml@2.8.0)))(@angular-devkit/architect@0.2102.10(chokidar@5.0.0))(vitest@4.1.5)':
+  '@analogjs/vitest-angular@2.1.3(@analogjs/vite-plugin-angular@2.1.3(@angular/build@21.2.10(@angular/compiler-cli@21.2.12(@angular/compiler@21.2.12)(typescript@5.9.3))(@angular/compiler@21.2.12)(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)(@types/node@20.19.9)(chokidar@5.0.0)(jiti@2.7.0)(less@4.5.1)(lightningcss@1.32.0)(postcss@8.5.14)(sass-embedded@1.99.0)(terser@5.47.1)(tslib@2.8.1)(typescript@5.9.3)(vitest@4.1.5)(yaml@2.8.0)))(@angular-devkit/architect@0.2102.10(chokidar@5.0.0))(vitest@4.1.5)':
     dependencies:
-      '@analogjs/vite-plugin-angular': 2.1.3(@angular/build@21.2.10(@angular/compiler-cli@21.2.12(@angular/compiler@21.2.12)(typescript@5.9.3))(@angular/compiler@21.2.12)(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@angular/platform-browser@21.2.12(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)(@types/node@20.19.9)(chokidar@5.0.0)(jiti@2.7.0)(less@4.5.1)(lightningcss@1.32.0)(postcss@8.5.14)(sass-embedded@1.99.0)(terser@5.47.1)(tslib@2.8.1)(typescript@5.9.3)(vitest@4.1.5)(yaml@2.8.0))
+      '@analogjs/vite-plugin-angular': 2.1.3(@angular/build@21.2.10(@angular/compiler-cli@21.2.12(@angular/compiler@21.2.12)(typescript@5.9.3))(@angular/compiler@21.2.12)(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)(@types/node@20.19.9)(chokidar@5.0.0)(jiti@2.7.0)(less@4.5.1)(lightningcss@1.32.0)(postcss@8.5.14)(sass-embedded@1.99.0)(terser@5.47.1)(tslib@2.8.1)(typescript@5.9.3)(vitest@4.1.5)(yaml@2.8.0))
       '@angular-devkit/architect': 0.2102.10(chokidar@5.0.0)
       vitest: 4.1.5(@types/node@20.19.9)(@vitest/coverage-v8@4.1.5)(@vitest/ui@4.1.5)(jsdom@27.4.0)(vite@8.0.11(@types/node@20.19.9)(esbuild@0.27.3)(jiti@2.7.0)(less@4.5.1)(sass-embedded@1.99.0)(sass@1.99.0)(terser@5.47.1)(yaml@2.8.0))
 
@@ -9057,7 +9090,12 @@ snapshots:
       eslint: 9.39.4(jiti@2.7.0)
       typescript: 5.9.3
 
-  '@angular/build@21.2.10(@angular/compiler-cli@21.2.12(@angular/compiler@21.2.12)(typescript@5.9.3))(@angular/compiler@21.2.12)(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@angular/platform-browser@21.2.12(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)(@types/node@20.19.9)(chokidar@5.0.0)(jiti@2.7.0)(less@4.5.1)(lightningcss@1.32.0)(postcss@8.5.14)(sass-embedded@1.99.0)(terser@5.47.1)(tslib@2.8.1)(typescript@5.9.3)(vitest@4.1.5)(yaml@2.8.0)':
+  '@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))':
+    dependencies:
+      '@angular/core': 21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)
+      tslib: 2.8.1
+
+  '@angular/build@21.2.10(@angular/compiler-cli@21.2.12(@angular/compiler@21.2.12)(typescript@5.9.3))(@angular/compiler@21.2.12)(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)(@types/node@20.19.9)(chokidar@5.0.0)(jiti@2.7.0)(less@4.5.1)(lightningcss@1.32.0)(postcss@8.5.14)(sass-embedded@1.99.0)(terser@5.47.1)(tslib@2.8.1)(typescript@5.9.3)(vitest@4.1.5)(yaml@2.8.0)':
     dependencies:
       '@ampproject/remapping': 2.3.0
       '@angular-devkit/architect': 0.2102.10(chokidar@5.0.0)
@@ -9092,7 +9130,7 @@ snapshots:
       watchpack: 2.5.1
     optionalDependencies:
       '@angular/core': 21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)
-      '@angular/platform-browser': 21.2.12(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))
+      '@angular/platform-browser': 21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))
       less: 4.5.1
       lmdb: 3.5.1
       postcss: 8.5.14
@@ -9112,11 +9150,11 @@ snapshots:
       - tsx
       - yaml
 
-  '@angular/cdk@21.2.10(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@angular/platform-browser@21.2.12(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(rxjs@7.8.2)':
+  '@angular/cdk@21.2.10(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(rxjs@7.8.2)':
     dependencies:
       '@angular/common': 21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2)
       '@angular/core': 21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)
-      '@angular/platform-browser': 21.2.12(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))
+      '@angular/platform-browser': 21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))
       parse5: 8.0.1
       rxjs: 7.8.2
       tslib: 2.8.1
@@ -9180,38 +9218,40 @@ snapshots:
     optionalDependencies:
       '@angular/compiler': 21.2.12
 
-  '@angular/forms@21.2.12(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@angular/platform-browser@21.2.12(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(rxjs@7.8.2)':
+  '@angular/forms@21.2.12(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(rxjs@7.8.2)':
     dependencies:
       '@angular/common': 21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2)
       '@angular/core': 21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)
-      '@angular/platform-browser': 21.2.12(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))
+      '@angular/platform-browser': 21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))
       '@standard-schema/spec': 1.1.0
       rxjs: 7.8.2
       tslib: 2.8.1
 
   '@angular/language-service@21.2.12': {}
 
-  '@angular/material@21.2.10(df9e878c9725ed0f80f9c8e8ac8e5787)':
+  '@angular/material@21.2.10(bf86f62ab7bb5f96d0640ecbc9c415e0)':
     dependencies:
-      '@angular/cdk': 21.2.10(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@angular/platform-browser@21.2.12(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(rxjs@7.8.2)
+      '@angular/cdk': 21.2.10(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(rxjs@7.8.2)
       '@angular/common': 21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2)
       '@angular/core': 21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)
-      '@angular/forms': 21.2.12(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@angular/platform-browser@21.2.12(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(rxjs@7.8.2)
-      '@angular/platform-browser': 21.2.12(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))
+      '@angular/forms': 21.2.12(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(rxjs@7.8.2)
+      '@angular/platform-browser': 21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))
       rxjs: 7.8.2
       tslib: 2.8.1
 
-  '@angular/platform-browser@21.2.12(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))':
+  '@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))':
     dependencies:
       '@angular/common': 21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2)
       '@angular/core': 21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)
       tslib: 2.8.1
+    optionalDependencies:
+      '@angular/animations': 21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))
 
-  '@angular/router@21.2.12(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@angular/platform-browser@21.2.12(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(rxjs@7.8.2)':
+  '@angular/router@21.2.12(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(rxjs@7.8.2)':
     dependencies:
       '@angular/common': 21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2)
       '@angular/core': 21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)
-      '@angular/platform-browser': 21.2.12(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))
+      '@angular/platform-browser': 21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))
       rxjs: 7.8.2
       tslib: 2.8.1
 
@@ -11299,7 +11339,7 @@ snapshots:
     dependencies:
       consola: 3.4.2
 
-  '@nx/angular@22.7.0(8cfa5c01ffe7486e21201fe5acd958a1)':
+  '@nx/angular@22.7.0(c014347b5b0a9baf1645e049c247d887)':
     dependencies:
       '@angular-devkit/core': 21.2.10(chokidar@5.0.0)
       '@angular-devkit/schematics': 21.2.10(chokidar@5.0.0)
@@ -11323,7 +11363,7 @@ snapshots:
       tslib: 2.8.1
       webpack-merge: 5.10.0
     optionalDependencies:
-      '@angular/build': 21.2.10(@angular/compiler-cli@21.2.12(@angular/compiler@21.2.12)(typescript@5.9.3))(@angular/compiler@21.2.12)(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@angular/platform-browser@21.2.12(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)(@types/node@20.19.9)(chokidar@5.0.0)(jiti@2.7.0)(less@4.5.1)(lightningcss@1.32.0)(postcss@8.5.14)(sass-embedded@1.99.0)(terser@5.47.1)(tslib@2.8.1)(typescript@5.9.3)(vitest@4.1.5)(yaml@2.8.0)
+      '@angular/build': 21.2.10(@angular/compiler-cli@21.2.12(@angular/compiler@21.2.12)(typescript@5.9.3))(@angular/compiler@21.2.12)(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(@angular/platform-browser@21.2.12(@angular/animations@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@angular/common@21.2.12(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.12(@angular/compiler@21.2.12)(rxjs@7.8.2)))(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)(@types/node@20.19.9)(chokidar@5.0.0)(jiti@2.7.0)(less@4.5.1)(lightningcss@1.32.0)(postcss@8.5.14)(sass-embedded@1.99.0)(terser@5.47.1)(tslib@2.8.1)(typescript@5.9.3)(vitest@4.1.5)(yaml@2.8.0)
     transitivePeerDependencies:
       - '@babel/traverse'
       - '@module-federation/enhanced'
@@ -12710,6 +12750,10 @@ snapshots:
     dependencies:
       '@babel/types': 7.29.0
 
+  '@types/bcrypt@6.0.0':
+    dependencies:
+      '@types/node': 20.19.9
+
   '@types/better-sqlite3@7.6.13':
     dependencies:
       '@types/node': 20.19.9
@@ -12818,6 +12862,26 @@ snapshots:
       undici-types: 6.21.0
 
   '@types/parse-json@4.0.2': {}
+
+  '@types/passport-jwt@4.0.1':
+    dependencies:
+      '@types/jsonwebtoken': 9.0.10
+      '@types/passport-strategy': 0.2.38
+
+  '@types/passport-local@1.0.38':
+    dependencies:
+      '@types/express': 4.17.25
+      '@types/passport': 1.0.17
+      '@types/passport-strategy': 0.2.38
+
+  '@types/passport-strategy@0.2.38':
+    dependencies:
+      '@types/express': 4.17.25
+      '@types/passport': 1.0.17
+
+  '@types/passport@1.0.17':
+    dependencies:
+      '@types/express': 4.17.25
 
   '@types/qs@6.15.1': {}
 
