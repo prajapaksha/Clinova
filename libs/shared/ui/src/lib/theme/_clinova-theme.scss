@@ -1,0 +1,48 @@
+@use '@angular/material' as mat;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Clinova Health Platform — Material 3 Theme
+// Primary: Teal/Cyan (calm, clinical)
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Custom color palettes aligned with Stitch design
+$clinova-primary-palette: mat.m2-define-palette(mat.$m2-teal-palette, 700, 400, 900);
+$clinova-accent-palette: mat.m2-define-palette(mat.$m2-cyan-palette, 500, 200, 700);
+$clinova-warn-palette: mat.m2-define-palette(mat.$m2-red-palette);
+
+// Staff app theme — high-density, clinical
+$staff-theme: mat.m2-define-light-theme((
+  color: (
+    primary: $clinova-primary-palette,
+    accent: $clinova-accent-palette,
+    warn: $clinova-warn-palette,
+  ),
+  typography: mat.m2-define-typography-config(
+    $font-family: "'Inter', 'Roboto', system-ui, -apple-system, sans-serif",
+    $headline-5: mat.m2-define-typography-level(24px, 32px, 600),
+    $headline-6: mat.m2-define-typography-level(20px, 28px, 600),
+    $subtitle-1: mat.m2-define-typography-level(16px, 24px, 500),
+    $subtitle-2: mat.m2-define-typography-level(14px, 20px, 500),
+    $body-1: mat.m2-define-typography-level(14px, 20px, 400),
+    $body-2: mat.m2-define-typography-level(13px, 18px, 400),
+    $caption: mat.m2-define-typography-level(12px, 16px, 400),
+    $button: mat.m2-define-typography-level(14px, 14px, 500),
+  ),
+  density: -1,   // compact for clinical staff screens
+));
+
+// Patient portal theme — comfortable density, warmer feel
+$portal-theme: mat.m2-define-light-theme((
+  color: (
+    primary: $clinova-primary-palette,
+    accent: $clinova-accent-palette,
+    warn: $clinova-warn-palette,
+  ),
+  typography: mat.m2-define-typography-config(
+    $font-family: "'Inter', 'Roboto', system-ui, -apple-system, sans-serif",
+    $headline-5: mat.m2-define-typography-level(26px, 36px, 600),
+    $body-1: mat.m2-define-typography-level(15px, 24px, 400),
+    $button: mat.m2-define-typography-level(15px, 15px, 500),
+  ),
+  density: 0,   // default density for patient portal
+));

@@ -47,3 +47,10 @@ Thumbs.db
 .claude/settings.local.json
 .nx/polygraph
 .nx/self-healing
+.angular
+
+__screenshots__/
+
+vitest.config.*.timestamp*
+# Playwright MCP
+.playwright-mcp/

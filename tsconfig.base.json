@@ -1,21 +1,60 @@
 {
   "compilerOptions": {
-    "composite": true,
-    "declarationMap": true,
-    "emitDeclarationOnly": true,
+    "rootDir": ".",
+    "sourceMap": true,
+    "declaration": false,
+    "moduleResolution": "bundler",
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
     "importHelpers": true,
-    "isolatedModules": true,
-    "lib": ["es2022"],
-    "module": "nodenext",
-    "moduleResolution": "nodenext",
-    "noEmitOnError": true,
-    "noFallthroughCasesInSwitch": true,
-    "noImplicitOverride": true,
-    "noImplicitReturns": true,
-    "noUnusedLocals": true,
+    "target": "ES2022",
+    "module": "ES2022",
+    "lib": ["ES2022", "dom"],
     "skipLibCheck": true,
+    "skipDefaultLibCheck": true,
+    "baseUrl": ".",
     "strict": true,
-    "target": "es2022",
-    "customConditions": ["@org/source"]
-  }
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "paths": {
+      "@clinova/ui": ["./libs/shared/ui/src/index.ts"],
+      "@clinova/auth": ["./libs/shared/auth/src/index.ts"],
+      "@clinova/util": ["./libs/shared/util/src/index.ts"],
+      "@clinova/identity/domain": ["./libs/identity/domain/src/index.ts"],
+      "@clinova/patient/domain": ["./libs/patient/domain/src/index.ts"],
+      "@clinova/scheduling/domain": ["./libs/scheduling/domain/src/index.ts"],
+      "@clinova/staff/domain": ["./libs/staff/domain/src/index.ts"],
+      "@clinova/clinical/domain": ["./libs/clinical/domain/src/index.ts"],
+      "@clinova/billing/domain": ["./libs/billing/domain/src/index.ts"],
+      "@clinova/notifications/domain": [
+        "./libs/notifications/domain/src/index.ts"
+      ],
+      "@clinova/reporting/domain": ["./libs/reporting/domain/src/index.ts"],
+      "@clinova/portal/domain": ["./libs/portal/domain/src/index.ts"],
+      "@clinova/identity/data-access": [
+        "./libs/identity/data-access/src/index.ts"
+      ],
+      "@clinova/patient/data-access": [
+        "./libs/patient/data-access/src/index.ts"
+      ],
+      "@clinova/scheduling/data-access": [
+        "./libs/scheduling/data-access/src/index.ts"
+      ],
+      "@clinova/staff/data-access": ["./libs/staff/data-access/src/index.ts"],
+      "@clinova/clinical/data-access": [
+        "./libs/clinical/data-access/src/index.ts"
+      ],
+      "@clinova/billing/data-access": [
+        "./libs/billing/data-access/src/index.ts"
+      ],
+      "@clinova/notifications/data-access": [
+        "./libs/notifications/data-access/src/index.ts"
+      ],
+      "@clinova/reporting/data-access": [
+        "./libs/reporting/data-access/src/index.ts"
+      ],
+      "@clinova/portal/data-access": ["./libs/portal/data-access/src/index.ts"]
+    }
+  },
+  "exclude": ["node_modules", "tmp"]
 }

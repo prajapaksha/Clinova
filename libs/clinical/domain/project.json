@@ -1,0 +1,9 @@
+{
+  "name": "clinical-domain",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/clinical/domain/src",
+  "projectType": "library",
+  "tags": [],
+  "// targets": "to see all targets run: nx show project clinical-domain --web",
+  "targets": {}
+}

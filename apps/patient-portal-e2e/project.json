@@ -1,0 +1,9 @@
+{
+  "name": "patient-portal-e2e",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "apps/patient-portal-e2e/src",
+  "implicitDependencies": ["patient-portal"],
+  "// targets": "to see all targets run: nx show project patient-portal-e2e --web",
+  "targets": {}
+}

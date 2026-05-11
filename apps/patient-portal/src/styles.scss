@@ -1,0 +1,40 @@
+@use '@angular/material' as mat;
+@use '../../../libs/shared/ui/src/lib/theme/clinova-theme' as theme;
+@use '../../../libs/shared/ui/src/lib/theme/design-tokens';
+
+@include mat.core();
+@include mat.all-component-themes(theme.$portal-theme);
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  margin: 0;
+  font-family: 'Inter', 'Roboto', system-ui, -apple-system, sans-serif;
+  font-size: 15px;
+  color: var(--clv-gray-900);
+  background-color: var(--clv-gray-50);
+  -webkit-font-smoothing: antialiased;
+}
+
+.mat-mdc-card {
+  border-radius: var(--clv-radius-card) !important;
+  box-shadow: var(--clv-shadow-card) !important;
+}
+
+.clv-alert {
+  padding: var(--clv-space-4) var(--clv-space-5);
+  border-radius: var(--clv-radius-card);
+  border-left: 4px solid;
+  font-size: 14px;
+
+  &--info    { background: var(--clv-info-bg);    border-color: var(--clv-info-border);    color: var(--clv-info-text); }
+  &--success { background: var(--clv-success-bg); border-color: var(--clv-success-border); color: var(--clv-success-text); }
+  &--warning { background: var(--clv-warning-bg); border-color: var(--clv-warning-border); color: var(--clv-warning-text); }
+  &--danger  { background: var(--clv-danger-bg);  border-color: var(--clv-danger-border);  color: var(--clv-danger-text); }
+}
+
+:focus-visible {
+  outline: 2px solid var(--clv-primary-700);
+  outline-offset: 2px;
+}

@@ -1,0 +1,104 @@
+@use '@angular/material' as mat;
+@use '../../../libs/shared/ui/src/lib/theme/clinova-theme' as theme;
+@use '../../../libs/shared/ui/src/lib/theme/design-tokens';
+
+// Apply the staff theme globally
+@include mat.core();
+@include mat.all-component-themes(theme.$staff-theme);
+
+// ── Global Resets & Base ────────────────────────────────────────────────────
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+  font-family: 'Inter', 'Roboto', system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+  color: var(--clv-gray-900);
+  background-color: var(--clv-gray-100);
+  -webkit-font-smoothing: antialiased;
+}
+
+// ── Material Form Field — Outline appearance default ───────────────────────
+.mat-mdc-form-field {
+  width: 100%;
+}
+
+// ── Clinical table row height ───────────────────────────────────────────────
+.clv-table-clinical .mat-mdc-row {
+  height: var(--clv-row-height-clinical);
+}
+
+.clv-table-compact .mat-mdc-row {
+  height: var(--clv-row-height-compact);
+}
+
+// ── Allergy Alert Banner ───────────────────────────────────────────────────
+.clv-allergy-banner {
+  background-color: var(--clv-allergy-bg);
+  color: var(--clv-allergy-text);
+  border-left: 4px solid var(--clv-allergy-border);
+  padding: var(--clv-space-2) var(--clv-space-4);
+  font-weight: 600;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: var(--clv-space-2);
+}
+
+// ── Appointment Status Badge Chips ─────────────────────────────────────────
+.clv-status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: var(--clv-radius-pill);
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+
+  &--scheduled   { background: var(--clv-gray-200);          color: var(--clv-gray-700); }
+  &--confirmed   { background: #e3f2fd;                      color: var(--clv-status-confirmed); }
+  &--checked-in  { background: #fff8e1;                      color: #f57f17; }
+  &--in-progress { background: #f3e5f5;                      color: var(--clv-status-in-progress); }
+  &--completed   { background: var(--clv-success-bg);        color: var(--clv-success-text); }
+  &--cancelled   { background: var(--clv-gray-200);          color: var(--clv-gray-500); }
+  &--no-show     { background: var(--clv-danger-bg);         color: var(--clv-danger-text); }
+  &--rescheduled { background: #fff3e0;                      color: var(--clv-status-rescheduled); }
+}
+
+// ── Inline Alerts ──────────────────────────────────────────────────────────
+.clv-alert {
+  padding: var(--clv-space-3) var(--clv-space-4);
+  border-radius: var(--clv-radius-card);
+  border-left: 4px solid;
+  font-size: 13px;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--clv-space-2);
+
+  &--info    { background: var(--clv-info-bg);    border-color: var(--clv-info-border);    color: var(--clv-info-text); }
+  &--success { background: var(--clv-success-bg); border-color: var(--clv-success-border); color: var(--clv-success-text); }
+  &--warning { background: var(--clv-warning-bg); border-color: var(--clv-warning-border); color: var(--clv-warning-text); }
+  &--danger  { background: var(--clv-danger-bg);  border-color: var(--clv-danger-border);  color: var(--clv-danger-text); }
+}
+
+// ── Skeleton Loader ────────────────────────────────────────────────────────
+@keyframes clv-shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+.clv-skeleton {
+  background: linear-gradient(90deg, var(--clv-gray-200) 25%, var(--clv-gray-100) 50%, var(--clv-gray-200) 75%);
+  background-size: 800px 100%;
+  animation: clv-shimmer 1.4s ease-in-out infinite;
+  border-radius: var(--clv-radius-input);
+}
+
+// ── Focus Outline ──────────────────────────────────────────────────────────
+:focus-visible {
+  outline: 2px solid var(--clv-primary-700);
+  outline-offset: 2px;
+}
