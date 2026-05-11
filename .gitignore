@@ -54,3 +54,11 @@ __screenshots__/
 vitest.config.*.timestamp*
 # Playwright MCP
 .playwright-mcp/
+
+# Environment & database
+.env
+.env.*
+!.env.example
+*.db
+*.db-shm
+*.db-wal
