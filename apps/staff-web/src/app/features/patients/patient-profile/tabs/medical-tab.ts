@@ -37,9 +37,10 @@ import { MatButtonModule } from '@angular/material/button';
         <!-- Allergies -->
         <mat-card class="med__card">
           <mat-card-header>
-            <mat-icon mat-card-avatar class="med__warn-icon">warning</mat-icon>
-            <mat-card-title>Allergies</mat-card-title>
-            <mat-card-subtitle>{{ p.allergies.length }} recorded</mat-card-subtitle>
+            <mat-card-title class="med__card-title med__card-title--warn">
+              <mat-icon>warning</mat-icon>Allergies
+              <span class="med__count">{{ p.allergies.length }} recorded</span>
+            </mat-card-title>
           </mat-card-header>
           <mat-card-content>
             @if (p.allergies.length === 0) {
@@ -70,8 +71,7 @@ import { MatButtonModule } from '@angular/material/button';
         <!-- Chronic Conditions -->
         <mat-card class="med__card">
           <mat-card-header>
-            <mat-icon mat-card-avatar>monitor_heart</mat-icon>
-            <mat-card-title>Chronic Conditions</mat-card-title>
+            <mat-card-title class="med__card-title"><mat-icon>monitor_heart</mat-icon>Chronic Conditions</mat-card-title>
           </mat-card-header>
           <mat-card-content>
             @if (p.chronicConditions.length === 0) {
@@ -89,8 +89,7 @@ import { MatButtonModule } from '@angular/material/button';
         <!-- Current Medications -->
         <mat-card class="med__card">
           <mat-card-header>
-            <mat-icon mat-card-avatar>medication</mat-icon>
-            <mat-card-title>Current Medications</mat-card-title>
+            <mat-card-title class="med__card-title"><mat-icon>medication</mat-icon>Current Medications</mat-card-title>
           </mat-card-header>
           <mat-card-content>
             @if (p.currentMedications.length === 0) {
@@ -114,8 +113,7 @@ import { MatButtonModule } from '@angular/material/button';
         <!-- Past Surgeries -->
         <mat-card class="med__card">
           <mat-card-header>
-            <mat-icon mat-card-avatar>healing</mat-icon>
-            <mat-card-title>Past Surgeries</mat-card-title>
+            <mat-card-title class="med__card-title"><mat-icon>healing</mat-icon>Past Surgeries</mat-card-title>
           </mat-card-header>
           <mat-card-content>
             @if (p.pastSurgeries.length === 0) {
@@ -133,8 +131,7 @@ import { MatButtonModule } from '@angular/material/button';
         <!-- Family History -->
         <mat-card class="med__card">
           <mat-card-header>
-            <mat-icon mat-card-avatar>family_restroom</mat-icon>
-            <mat-card-title>Family History</mat-card-title>
+            <mat-card-title class="med__card-title"><mat-icon>family_restroom</mat-icon>Family History</mat-card-title>
           </mat-card-header>
           <mat-card-content>
             @if (p.familyHistory.length === 0) {
@@ -152,8 +149,7 @@ import { MatButtonModule } from '@angular/material/button';
         <!-- Immunizations -->
         <mat-card class="med__card">
           <mat-card-header>
-            <mat-icon mat-card-avatar>vaccines</mat-icon>
-            <mat-card-title>Immunization Log</mat-card-title>
+            <mat-card-title class="med__card-title"><mat-icon>vaccines</mat-icon>Immunization Log</mat-card-title>
           </mat-card-header>
           <mat-card-content>
             @if (p.immunizationLog.length === 0) {
@@ -202,7 +198,27 @@ import { MatButtonModule } from '@angular/material/button';
       }
       &__vital-value { font-size: 1.5rem; font-weight: 600; }
 
-      &__warn-icon { color: #dc2626 !important; }
+      &__card-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 1rem !important;
+        font-weight: 500;
+        mat-icon {
+          font-size: 1.125rem;
+          width: 1.125rem;
+          height: 1.125rem;
+          color: var(--mat-sys-primary, #00796b);
+        }
+        &--warn mat-icon { color: #dc2626; }
+      }
+
+      &__count {
+        margin-left: 4px;
+        font-size: 0.75rem;
+        font-weight: 400;
+        color: var(--mat-sys-on-surface-variant, #6b7280);
+      }
 
       &__allergy-list { display: flex; flex-direction: column; gap: 10px; }
 
