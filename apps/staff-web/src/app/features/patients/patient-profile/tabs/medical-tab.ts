@@ -1,15 +1,20 @@
-import { Component, computed, inject } from '@angular/core';
-import { PatientStore } from '@clinova/patient/data-access';
+import { Component, computed, DestroyRef, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { MatDialog } from '@angular/material/dialog';
+import { PatientApiService, PatientStore } from '@clinova/patient/data-access';
+import type { AllergyId, PatientId } from '@clinova/patient/domain';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatListModule } from '@angular/material/list';
 import { MatButtonModule } from '@angular/material/button';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { AddAllergyDialog } from '../add-allergy-dialog';
 
 @Component({
   selector: 'clv-medical-tab',
   standalone: true,
-  imports: [MatCardModule, MatIconModule, MatChipsModule, MatListModule, MatButtonModule],
+  imports: [MatCardModule, MatIconModule, MatChipsModule, MatListModule, MatButtonModule, MatTooltipModule],
   template: `
     @if (patient(); as p) {
       <div class="med">
@@ -52,6 +57,11 @@ import { MatButtonModule } from '@angular/material/button';
                     <div class="med__allergy-top">
                       <strong>{{ a.allergen }}</strong>
                       <span class="med__severity" [attr.data-severity]="a.severity">{{ a.severity }}</span>
+                      <button mat-icon-button class="med__allergy-del"
+                              matTooltip="Remove allergy"
+                              (click)="removeAllergy(p.id, a.id)">
+                        <mat-icon>delete_outline</mat-icon>
+                      </button>
                     </div>
                     <div class="med__allergy-meta">
                       <span class="med__tag">{{ a.type }}</span>
@@ -64,7 +74,9 @@ import { MatButtonModule } from '@angular/material/button';
             }
           </mat-card-content>
           <mat-card-actions>
-            <button mat-button><mat-icon>add</mat-icon> Add Allergy</button>
+            <button mat-button (click)="openAddAllergy(p.id)">
+              <mat-icon>add</mat-icon> Add Allergy
+            </button>
           </mat-card-actions>
         </mat-card>
 
@@ -105,9 +117,6 @@ import { MatButtonModule } from '@angular/material/button';
               </mat-list>
             }
           </mat-card-content>
-          <mat-card-actions>
-            <button mat-button><mat-icon>add</mat-icon> Add Medication</button>
-          </mat-card-actions>
         </mat-card>
 
         <!-- Past Surgeries -->
@@ -233,7 +242,24 @@ import { MatButtonModule } from '@angular/material/button';
         &[data-severity="LOW"]      { border-color: #3b82f6; background: rgba(59,130,246,.06); }
       }
 
-      &__allergy-top { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+      &__allergy-top {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 4px;
+        strong { flex: 1; }
+      }
+
+      &__allergy-del {
+        width: 28px !important;
+        height: 28px !important;
+        line-height: 28px !important;
+        opacity: 0;
+        transition: opacity 0.15s;
+        mat-icon { font-size: 1rem; width: 1rem; height: 1rem; color: #9ca3af; }
+      }
+
+      &__allergy:hover &__allergy-del { opacity: 1; }
 
       &__severity {
         display: inline-block;
@@ -279,5 +305,25 @@ import { MatButtonModule } from '@angular/material/button';
 })
 export class MedicalTab {
   protected readonly store = inject(PatientStore);
+  private readonly api = inject(PatientApiService);
+  private readonly dialog = inject(MatDialog);
+  private readonly destroyRef = inject(DestroyRef);
+
   protected readonly patient = computed(() => this.store.selectedPatient());
+
+  protected openAddAllergy(patientId: string): void {
+    this.dialog.open(AddAllergyDialog, {
+      data: patientId as PatientId,
+      maxWidth: '560px',
+      width: '100%',
+    });
+  }
+
+  protected removeAllergy(patientId: string, allergyId: string): void {
+    this.api.removeAllergy(patientId as PatientId, allergyId as AllergyId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => this.store.loadById(patientId as PatientId),
+      });
+  }
 }

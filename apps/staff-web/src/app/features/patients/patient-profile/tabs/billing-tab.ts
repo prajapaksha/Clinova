@@ -38,8 +38,9 @@ import { MatCardModule } from '@angular/material/card';
         @if (p.insurancePolicies.length) {
           <mat-card class="bil__card">
             <mat-card-header>
-              <mat-icon mat-card-avatar>health_and_safety</mat-icon>
-              <mat-card-title>Insurance on File</mat-card-title>
+              <mat-card-title class="bil__card-title">
+                <mat-icon>health_and_safety</mat-icon>Insurance on File
+              </mat-card-title>
             </mat-card-header>
             <mat-card-content>
               @for (ins of p.insurancePolicies; track ins.id) {
@@ -99,6 +100,20 @@ import { MatCardModule } from '@angular/material/card';
       &__kpi-value { font-size: 1.75rem; font-weight: 600; }
 
       &__card { margin-bottom: 24px; }
+
+      &__card-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 1rem !important;
+        font-weight: 500;
+        mat-icon {
+          font-size: 1.125rem;
+          width: 1.125rem;
+          height: 1.125rem;
+          color: var(--mat-sys-primary, #00796b);
+        }
+      }
 
       &__ins-row {
         display: flex;

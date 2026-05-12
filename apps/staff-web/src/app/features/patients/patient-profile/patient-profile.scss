@@ -23,6 +23,34 @@
     opacity: 0.4;
   }
 
+  // ── Archive confirm banner ────────────────────────────────────────────────
+  &__archive-confirm {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 24px;
+    background: #fff7ed;
+    border-bottom: 2px solid #d97706;
+    color: #92400e;
+    font-size: 0.9rem;
+    flex-wrap: wrap;
+
+    mat-icon { color: #d97706; flex-shrink: 0; }
+    span { flex: 1; }
+  }
+
+  &__archive-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  &__archive-btn {
+    background: #d97706 !important;
+    color: white !important;
+  }
+
   // ── Critical allergy banner ───────────────────────────────────────────────
   &__allergy-banner {
     display: flex;

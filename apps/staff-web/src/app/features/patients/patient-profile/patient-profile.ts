@@ -1,7 +1,9 @@
-import { Component, computed, effect, inject, input } from '@angular/core';
+import { Component, computed, DestroyRef, effect, inject, input, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DatePipe } from '@angular/common';
-import { RouterModule } from '@angular/router';
-import { PatientStore } from '@clinova/patient/data-access';
+import { Router, RouterModule } from '@angular/router';
+import { MatDialog } from '@angular/material/dialog';
+import { PatientApiService, PatientStore } from '@clinova/patient/data-access';
 import type { PatientId } from '@clinova/patient/domain';
 import { AlertSeverity } from '@clinova/patient/domain';
 import { MatButtonModule } from '@angular/material/button';
@@ -11,6 +13,9 @@ import { MatTabsModule } from '@angular/material/tabs';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDividerModule } from '@angular/material/divider';
+import { MatDialogModule } from '@angular/material/dialog';
+import { EditDemographicsDialog } from './edit-demographics-dialog';
+import { AddAllergyDialog } from './add-allergy-dialog';
 
 @Component({
   selector: 'clv-patient-profile',
@@ -18,7 +23,8 @@ import { MatDividerModule } from '@angular/material/divider';
   imports: [
     RouterModule, DatePipe,
     MatButtonModule, MatIconModule, MatMenuModule,
-    MatTabsModule, MatProgressSpinnerModule, MatTooltipModule, MatDividerModule,
+    MatTabsModule, MatProgressSpinnerModule, MatTooltipModule,
+    MatDividerModule, MatDialogModule,
   ],
   template: `
     @if (store.error() && !patient()) {
@@ -39,6 +45,20 @@ import { MatDividerModule } from '@angular/material/divider';
           @for (a of criticalAllergies(); track a.id) {
             <span class="pp__allergy-item">{{ a.allergen }} — {{ a.reaction }}</span>
           }
+        </div>
+      }
+
+      <!-- Archive Confirmation Banner -->
+      @if (confirmingArchive()) {
+        <div class="pp__archive-confirm" role="alertdialog">
+          <mat-icon>archive</mat-icon>
+          <span>Archive this patient record? They will be hidden from active lists.</span>
+          <div class="pp__archive-actions">
+            <button mat-button (click)="confirmingArchive.set(false)">Cancel</button>
+            <button mat-flat-button class="pp__archive-btn" [disabled]="archiving()" (click)="doArchive()">
+              @if (archiving()) { <mat-spinner diameter="16" /> } @else { Archive }
+            </button>
+          </div>
         </div>
       }
 
@@ -93,16 +113,18 @@ import { MatDividerModule } from '@angular/material/divider';
             <mat-icon>more_vert</mat-icon>
           </button>
           <mat-menu #moreMenu>
-            <button mat-menu-item>
+            <button mat-menu-item (click)="openEditDemographics()">
               <mat-icon>edit</mat-icon> Edit demographics
             </button>
             <button mat-menu-item>
               <mat-icon>merge_type</mat-icon> Merge duplicate records
             </button>
             <mat-divider />
-            <button mat-menu-item class="pp__menu-danger">
-              <mat-icon>archive</mat-icon> Archive patient
-            </button>
+            @if (!patient()!.isArchived) {
+              <button mat-menu-item class="pp__menu-danger" (click)="confirmingArchive.set(true)">
+                <mat-icon>archive</mat-icon> Archive patient
+              </button>
+            }
           </mat-menu>
         </div>
       </div>
@@ -144,10 +166,16 @@ import { MatDividerModule } from '@angular/material/divider';
 })
 export class PatientProfilePage {
   protected readonly store = inject(PatientStore);
+  private readonly api = inject(PatientApiService);
+  private readonly dialog = inject(MatDialog);
+  private readonly router = inject(Router);
+  private readonly destroyRef = inject(DestroyRef);
 
   readonly id = input<string>('');
 
   protected readonly patient = computed(() => this.store.selectedPatient());
+  protected readonly confirmingArchive = signal(false);
+  protected readonly archiving = signal(false);
 
   protected readonly age = computed(() => {
     const dob = this.patient()?.dateOfBirth;
@@ -171,6 +199,29 @@ export class PatientProfilePage {
         this.store.selectPatient(id);
         this.store.loadById(id as unknown as PatientId);
       }
+    });
+  }
+
+  protected openEditDemographics(): void {
+    const p = this.patient();
+    if (!p) return;
+    this.dialog.open(EditDemographicsDialog, {
+      data: p,
+      maxWidth: '680px',
+      width: '100%',
+    });
+  }
+
+  protected doArchive(): void {
+    const p = this.patient();
+    if (!p) return;
+    this.archiving.set(true);
+    this.api.archive(p.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: () => this.router.navigate(['/patients']),
+      error: () => {
+        this.archiving.set(false);
+        this.confirmingArchive.set(false);
+      },
     });
   }
 

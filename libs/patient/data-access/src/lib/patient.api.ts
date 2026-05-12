@@ -22,16 +22,25 @@ export interface CreatePatientDto {
 export interface UpdatePatientDto {
   title?: string;
   firstName?: string;
-  middleName?: string;
+  middleName?: string | null;
   lastName?: string;
-  preferredName?: string;
-  pronouns?: string;
+  preferredName?: string | null;
+  pronouns?: string | null;
+  dateOfBirth?: string;
   sex?: string;
-  genderIdentity?: string;
-  contact?: Partial<Patient['contact']>;
-  maritalStatus?: string;
-  occupation?: string;
+  genderIdentity?: string | null;
+  maritalStatus?: string | null;
+  occupation?: string | null;
   preferredLanguage?: string;
+  ethnicity?: string | null;
+  bloodType?: string;
+  heightCm?: number | null;
+  weightKg?: number | null;
+  isVip?: boolean;
+  contact?: Partial<Patient['contact']>;
+  emergencyContacts?: Array<{ name: string; relationship: string; phone: string }>;
+  chronicConditions?: string[];
+  currentMedications?: string[];
 }
 
 function toHttpParams(filters: PatientSearchFilters): HttpParams {
