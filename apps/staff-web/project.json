@@ -74,7 +74,7 @@
       "executor": "@nx/web:file-server",
       "options": {
         "buildTarget": "staff-web:build",
-        "port": 4200,
+        "port": 4400,
         "staticFilePath": "dist/apps/staff-web/browser",
         "spa": true
       }

@@ -22,7 +22,7 @@ async function bootstrap() {
 
   // CORS — tighten origins in production via env
   app.enableCors({
-    origin: process.env['CORS_ORIGINS']?.split(',') ?? ['http://localhost:4200', 'http://localhost:4201'],
+    origin: process.env['CORS_ORIGINS']?.split(',') ?? ['http://localhost:4400', 'http://localhost:4401'],
     credentials: true,
   });
 
