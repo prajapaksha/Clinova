@@ -13,4 +13,14 @@ export class StaffService {
   findById(id: string): Promise<Staff | null> {
     return this.prisma.staff.findUnique({ where: { id } });
   }
+
+  findAll(role?: string): Promise<Staff[]> {
+    return this.prisma.staff.findMany({
+      where: {
+        isActive: true,
+        ...(role ? { role } : {}),
+      },
+      orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }],
+    });
+  }
 }

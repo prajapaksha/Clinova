@@ -66,3 +66,45 @@ model Staff {
 
   @@index([email])
 }
+
+model AppointmentType {
+  id                     String        @id @default(cuid())
+  name                   String
+  defaultDurationMinutes Int           @default(30)
+  bufferAfterMinutes     Int           @default(0)
+  color                  String        @default("#1976D2")
+  isActive               Boolean       @default(true)
+  createdAt              DateTime      @default(now())
+  updatedAt              DateTime      @updatedAt
+  appointments           Appointment[]
+}
+
+model Appointment {
+  id                 String    @id @default(cuid())
+  patientId          String
+  providerId         String
+  locationId         String    @default("main")
+  appointmentTypeId  String
+  slotStart          DateTime
+  slotEnd            DateTime
+  status             String    @default("SCHEDULED")
+  reasonForVisit     String?
+  notes              String?
+  cancellationReason String?
+  cancellationNote   String?
+  recurringSeriesId  String?
+  rescheduledFromId  String?
+  rescheduledToId    String?
+  checkedInAt        DateTime?
+  completedAt        DateTime?
+  remindersJson      String    @default("[]")
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  appointmentType AppointmentType @relation(fields: [appointmentTypeId], references: [id])
+
+  @@index([patientId])
+  @@index([providerId])
+  @@index([slotStart])
+  @@index([status])
+}

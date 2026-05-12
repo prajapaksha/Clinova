@@ -878,6 +878,16 @@ const patients = [
   },
 ];
 
+// ─── appointment types ───────────────────────────────────────────────────────
+
+const APPOINTMENT_TYPES = [
+  { name: 'New Patient Visit',  defaultDurationMinutes: 45, bufferAfterMinutes: 0, color: '#1976D2' },
+  { name: 'Follow-Up Visit',    defaultDurationMinutes: 15, bufferAfterMinutes: 0, color: '#00897B' },
+  { name: 'Annual Physical',    defaultDurationMinutes: 60, bufferAfterMinutes: 0, color: '#388E3C' },
+  { name: 'Urgent Care',        defaultDurationMinutes: 30, bufferAfterMinutes: 0, color: '#D32F2F' },
+  { name: 'Procedure',          defaultDurationMinutes: 90, bufferAfterMinutes: 15, color: '#7B1FA2' },
+];
+
 const STAFF_USERS = [
   { email: 'admin@clinova.health',      password: 'Admin@2026',      firstName: 'Alex',    lastName: 'Rivera',   role: 'ADMIN' },
   { email: 'dr.chen@clinova.health',    password: 'Doctor@2026',     firstName: 'Wei',     lastName: 'Chen',     role: 'PHYSICIAN' },
@@ -888,6 +898,8 @@ const STAFF_USERS = [
 
 async function main() {
   console.log('🗑  Clearing existing data…');
+  await prisma.appointment.deleteMany({});
+  await prisma.appointmentType.deleteMany({});
   await prisma.patient.deleteMany({});
   await prisma.staff.deleteMany({});
 
@@ -913,6 +925,68 @@ async function main() {
     console.log(`  ✓ [${u.role.padEnd(9)}]  ${u.firstName} ${u.lastName}  <${u.email}>  pw: ${u.password}`);
   }
   console.log(`\n✅ Seeded ${STAFF_USERS.length} staff users successfully.`);
+
+  // ─── appointment types ───────────────────────────────────────────────────
+  console.log('\n📋 Seeding appointment types…\n');
+  const seededTypes: Array<{ id: string; name: string }> = [];
+  for (const at of APPOINTMENT_TYPES) {
+    const row = await prisma.appointmentType.create({ data: at });
+    seededTypes.push({ id: row.id, name: row.name });
+    console.log(`  ✓ [${row.name}]  ${row.defaultDurationMinutes}min  ${row.color}`);
+  }
+  console.log(`\n✅ Seeded ${seededTypes.length} appointment types.`);
+
+  // ─── sample appointments ─────────────────────────────────────────────────
+  console.log('\n📅 Seeding sample appointments…\n');
+
+  const chen  = await prisma.staff.findUnique({ where: { email: 'dr.chen@clinova.health' } });
+  const patel = await prisma.staff.findUnique({ where: { email: 'dr.patel@clinova.health' } });
+  const allPatients = await prisma.patient.findMany({ take: 8, orderBy: { createdAt: 'asc' }, select: { id: true, firstName: true, lastName: true } });
+
+  if (!chen || !patel) throw new Error('Physicians not found — run staff seed first');
+  if (allPatients.length < 6) throw new Error('Not enough patients found');
+
+  const typeMap: Record<string, string> = {};
+  for (const t of seededTypes) typeMap[t.name] = t.id;
+
+  function slot(dateStr: string, startHour: number, startMin: number, durationMin: number) {
+    const start = new Date(`${dateStr}T${String(startHour).padStart(2, '0')}:${String(startMin).padStart(2, '0')}:00`);
+    const end   = new Date(start.getTime() + durationMin * 60_000);
+    return { slotStart: start, slotEnd: end };
+  }
+
+  const sampleAppointments = [
+    // Monday 2026-05-11
+    { patientId: allPatients[0].id, providerId: chen.id,  appointmentTypeId: typeMap['New Patient Visit'],  ...slot('2026-05-11', 9,  0, 45), status: 'COMPLETED',  completedAt: new Date('2026-05-11T10:00:00'), reasonForVisit: 'Initial consultation for diabetes management' },
+    { patientId: allPatients[1].id, providerId: patel.id, appointmentTypeId: typeMap['Follow-Up Visit'],    ...slot('2026-05-11', 9,  0, 15), status: 'COMPLETED',  completedAt: new Date('2026-05-11T09:20:00'), reasonForVisit: 'Asthma follow-up' },
+    { patientId: allPatients[2].id, providerId: chen.id,  appointmentTypeId: typeMap['Annual Physical'],    ...slot('2026-05-11', 10, 0, 60), status: 'COMPLETED',  completedAt: new Date('2026-05-11T11:10:00'), reasonForVisit: 'Annual wellness exam' },
+
+    // Tuesday 2026-05-12
+    { patientId: allPatients[3].id, providerId: patel.id, appointmentTypeId: typeMap['New Patient Visit'],  ...slot('2026-05-12', 9,  0, 45), status: 'CHECKED_IN', checkedInAt:  new Date('2026-05-12T08:55:00'), reasonForVisit: 'Evaluation of heart failure symptoms' },
+    { patientId: allPatients[4].id, providerId: chen.id,  appointmentTypeId: typeMap['Follow-Up Visit'],    ...slot('2026-05-12', 9,  0, 15), status: 'CONFIRMED',  reasonForVisit: 'Post-surgery knee check' },
+    { patientId: allPatients[5].id, providerId: patel.id, appointmentTypeId: typeMap['Urgent Care'],        ...slot('2026-05-12', 10, 0, 30), status: 'SCHEDULED',  reasonForVisit: 'Acute asthma exacerbation' },
+
+    // Wednesday 2026-05-13
+    { patientId: allPatients[6].id, providerId: chen.id,  appointmentTypeId: typeMap['Annual Physical'],    ...slot('2026-05-13', 9,  0, 60), status: 'CONFIRMED',  reasonForVisit: 'Annual physical' },
+    { patientId: allPatients[0].id, providerId: patel.id, appointmentTypeId: typeMap['Follow-Up Visit'],    ...slot('2026-05-13', 10, 0, 15), status: 'SCHEDULED',  reasonForVisit: 'Review lab results' },
+    { patientId: allPatients[7].id, providerId: chen.id,  appointmentTypeId: typeMap['Procedure'],          ...slot('2026-05-13', 11, 0, 90), status: 'SCHEDULED',  reasonForVisit: 'Minor procedure — wound care' },
+
+    // Thursday 2026-05-14
+    { patientId: allPatients[1].id, providerId: patel.id, appointmentTypeId: typeMap['Annual Physical'],    ...slot('2026-05-14', 9,  0, 60), status: 'SCHEDULED',  reasonForVisit: 'Annual wellness exam' },
+    { patientId: allPatients[2].id, providerId: chen.id,  appointmentTypeId: typeMap['Follow-Up Visit'],    ...slot('2026-05-14', 10, 0, 15), status: 'SCHEDULED',  reasonForVisit: 'Hypothyroidism medication review' },
+
+    // Friday 2026-05-15
+    { patientId: allPatients[3].id, providerId: chen.id,  appointmentTypeId: typeMap['Urgent Care'],        ...slot('2026-05-15', 9,  0, 30), status: 'SCHEDULED',  reasonForVisit: 'Urgent: chest tightness' },
+    { patientId: allPatients[4].id, providerId: patel.id, appointmentTypeId: typeMap['New Patient Visit'],  ...slot('2026-05-15', 10, 0, 45), status: 'SCHEDULED',  reasonForVisit: 'New patient — post-ACL recovery' },
+  ];
+
+  for (const appt of sampleAppointments) {
+    const row = await prisma.appointment.create({ data: appt as any });
+    console.log(
+      `  ✓ [${row.status.padEnd(10)}]  ${row.slotStart.toISOString().slice(0, 16)}  patient:${row.patientId.slice(-6)}  provider:${row.providerId.slice(-6)}`,
+    );
+  }
+  console.log(`\n✅ Seeded ${sampleAppointments.length} appointments.`);
 }
 
 main()

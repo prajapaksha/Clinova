@@ -6,7 +6,7 @@ import { tapResponse } from '@ngrx/operators';
 import { pipe, switchMap, tap } from 'rxjs';
 import type {
   Appointment, AppointmentId, AppointmentType, AppointmentFilters,
-  WaitlistEntry, CancellationReason, TimeSlot,
+  WaitlistEntry, CancellationReason, TimeSlot, Provider,
 } from '@clinova/scheduling/domain';
 import { AppointmentStatus } from '@clinova/scheduling/domain';
 import { SchedulingApiService, type BookAppointmentDto } from './scheduling.api';
@@ -18,6 +18,7 @@ interface SchedulingState {
   viewDate: Date;
   view: CalendarView;
   appointmentTypes: AppointmentType[];
+  providers: Provider[];
   waitlist: WaitlistEntry[];
   loading: boolean;
   error: string | null;
@@ -30,8 +31,9 @@ export const SchedulingStore = signalStore(
   withState<SchedulingState>({
     selectedAppointmentId: null,
     viewDate: new Date(),
-    view: 'day',
+    view: 'week',
     appointmentTypes: [],
+    providers: [],
     waitlist: [],
     loading: false,
     error: null,
@@ -75,6 +77,15 @@ export const SchedulingStore = signalStore(
       switchMap(() => api.getAppointmentTypes().pipe(
         tapResponse({
           next: types => patchState(store, { appointmentTypes: types }),
+          error: (e: Error) => patchState(store, { error: e.message }),
+        })
+      ))
+    )),
+
+    loadProviders: rxMethod<void>(pipe(
+      switchMap(() => api.getProviders().pipe(
+        tapResponse({
+          next: providers => patchState(store, { providers }),
           error: (e: Error) => patchState(store, { error: e.message }),
         })
       ))

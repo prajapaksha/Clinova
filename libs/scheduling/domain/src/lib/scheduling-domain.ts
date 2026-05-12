@@ -90,6 +90,20 @@ export interface Appointment {
   readonly reminders: ReadonlyArray<AppointmentReminder>;
   readonly createdAt: Date;
   readonly updatedAt: Date;
+  // Denormalized fields populated by the API for display
+  readonly patientName?: string;
+  readonly patientMrn?: string;
+  readonly typeName?: string;
+  readonly typeColor?: string;
+  readonly providerName?: string;
+}
+
+export interface Provider {
+  readonly id: string;
+  readonly firstName: string;
+  readonly lastName: string;
+  readonly role: string;
+  readonly email: string;
 }
 
 export interface RecurringSeries {
