@@ -50,6 +50,7 @@
       "continuous": true,
       "executor": "@angular/build:dev-server",
       "options": {
+        "port": 4400,
         "proxyConfig": "apps/staff-web/proxy.conf.json"
       },
       "configurations": {
