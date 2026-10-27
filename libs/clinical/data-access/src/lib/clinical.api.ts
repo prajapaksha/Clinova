@@ -2,21 +2,34 @@ import { inject, Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import type {
-  Encounter, EncounterId, EncounterStatus, EncounterFilters,
-  Prescription, PrescriptionId, EncounterTemplate, TemplateId,
-  VitalMeasurement, SoapNote,
+  DrugCatalogEntry, Encounter, EncounterId, EncounterFilters,
+  Prescription, PrescriptionId, PrescriptionSafetyCheck, PrescriptionStatus,
+  EncounterTemplate, TemplateId, SoapNote, VitalType,
 } from '@clinova/clinical/domain';
 
 export interface StartEncounterDto {
-  appointmentId: string;
   patientId: string;
-  providerId: string;
+  /** Omit for a walk-in encounter. */
+  appointmentId?: string;
+  /** Defaults to the appointment's provider, or the signed-in physician. */
+  providerId?: string;
   templateId?: TemplateId;
 }
 
+export type SoapNotePatch = {
+  [K in keyof SoapNote]?: Partial<SoapNote[K]>;
+};
+
+export interface VitalInput {
+  type: VitalType;
+  value: number;
+  unit: string;
+}
+
 export interface UpdateNoteDto {
-  note?: Partial<SoapNote>;
-  vitals?: VitalMeasurement[];
+  note?: SoapNotePatch;
+  vitals?: VitalInput[];
+  status?: 'DRAFT' | 'IN_PROGRESS';
 }
 
 export interface IssuePrescriptionDto {
@@ -27,10 +40,18 @@ export interface IssuePrescriptionDto {
     route: string;
     dosageAmount: string;
     frequency: string;
-    durationDays?: number;
+    durationDays?: number | null;
   };
   refillsAllowed: number;
   instructions?: string;
+  pharmacyNotes?: string;
+  /** Must be true to issue when the safety check returned alerts. */
+  acknowledgeWarnings?: boolean;
+}
+
+export interface UpdatePrescriptionDto {
+  status?: PrescriptionStatus;
+  pharmacyNotes?: string;
 }
 
 function toHttpParams(filters: EncounterFilters): HttpParams {
@@ -79,6 +100,10 @@ export class ClinicalApiService {
     return this.http.post<Encounter>(`${this.base}/${id}/sign`, {});
   }
 
+  discard(id: EncounterId): Observable<void> {
+    return this.http.delete<void>(`${this.base}/${id}`);
+  }
+
   addAddendum(id: EncounterId, content: string): Observable<Encounter> {
     return this.http.post<Encounter>(`${this.base}/${id}/addenda`, { content });
   }
@@ -87,18 +112,21 @@ export class ClinicalApiService {
     return this.http.post<Prescription>(`${this.base}/${encounterId}/prescriptions`, dto);
   }
 
-  updatePrescription(prescriptionId: PrescriptionId, updates: Partial<IssuePrescriptionDto>): Observable<Prescription> {
+  checkPrescription(patientId: string, medicationName: string): Observable<PrescriptionSafetyCheck> {
+    return this.http.post<PrescriptionSafetyCheck>('/api/prescriptions/check', { patientId, medicationName });
+  }
+
+  updatePrescription(prescriptionId: PrescriptionId, updates: UpdatePrescriptionDto): Observable<Prescription> {
     return this.http.patch<Prescription>(`/api/prescriptions/${prescriptionId}`, updates);
   }
 
-  getTemplates(filters?: { specialty?: string; isShared?: boolean }): Observable<EncounterTemplate[]> {
+  getTemplates(filters?: { specialty?: string }): Observable<EncounterTemplate[]> {
     const params: Record<string, string> = {};
     if (filters?.specialty) params['specialty'] = filters.specialty;
-    if (filters?.isShared != null) params['isShared'] = String(filters.isShared);
     return this.http.get<EncounterTemplate[]>('/api/encounter-templates', { params });
   }
 
-  saveTemplate(template: Omit<EncounterTemplate, 'id'>): Observable<EncounterTemplate> {
+  saveTemplate(template: { name: string; specialty?: string; defaultNote: SoapNotePatch; isShared?: boolean }): Observable<EncounterTemplate> {
     return this.http.post<EncounterTemplate>('/api/encounter-templates', template);
   }
 
@@ -106,7 +134,14 @@ export class ClinicalApiService {
     return this.http.get<Array<{ code: string; description: string }>>('/api/icd10/search', { params: { q: query } });
   }
 
-  searchDrugs(query: string): Observable<Array<{ name: string; form: string; strength: string }>> {
-    return this.http.get<Array<{ name: string; form: string; strength: string }>>('/api/drugs/search', { params: { q: query } });
+  searchDrugs(query: string): Observable<DrugCatalogEntry[]> {
+    return this.http.get<DrugCatalogEntry[]>('/api/drugs/search', { params: { q: query } });
+  }
+
+  /** Physicians who can own an encounter. */
+  getProviders(): Observable<Array<{ id: string; firstName: string; lastName: string }>> {
+    return this.http.get<Array<{ id: string; firstName: string; lastName: string }>>('/api/staff', {
+      params: { role: 'PHYSICIAN' },
+    });
   }
 }

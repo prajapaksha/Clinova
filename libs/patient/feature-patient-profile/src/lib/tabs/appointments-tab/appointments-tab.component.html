@@ -46,6 +46,13 @@
             @if (appt.reasonForVisit) {
               <div class="apt__card-meta apt__card-reason">{{ appt.reasonForVisit }}</div>
             }
+            @if (appt.status === 'CHECKED_IN' || appt.status === 'IN_PROGRESS') {
+              <a mat-flat-button color="primary" class="apt__encounter" routerLink="/encounters/new"
+                 [queryParams]="{ appointmentId: appt.id, patientId: appt.patientId }">
+                <mat-icon>{{ appt.status === 'CHECKED_IN' ? 'play_arrow' : 'edit_note' }}</mat-icon>
+                {{ appt.status === 'CHECKED_IN' ? 'Begin encounter' : 'Open encounter' }}
+              </a>
+            }
           </div>
         </div>
       }
@@ -82,6 +89,13 @@
               <mat-icon>badge</mat-icon>
               {{ appt.providerName }}
             </div>
+            @if (appt.status === 'CHECKED_IN' || appt.status === 'IN_PROGRESS') {
+              <a mat-flat-button color="primary" class="apt__encounter" routerLink="/encounters/new"
+                 [queryParams]="{ appointmentId: appt.id, patientId: appt.patientId }">
+                <mat-icon>{{ appt.status === 'CHECKED_IN' ? 'play_arrow' : 'edit_note' }}</mat-icon>
+                {{ appt.status === 'CHECKED_IN' ? 'Begin encounter' : 'Open encounter' }}
+              </a>
+            }
           </div>
         </div>
       }

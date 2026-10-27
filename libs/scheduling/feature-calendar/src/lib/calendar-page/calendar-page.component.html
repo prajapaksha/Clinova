@@ -194,16 +194,16 @@
             </button>
           }
           @if (appt.status === 'CHECKED_IN') {
-            <button mat-flat-button (click)="startAppt(appt.id)">
-              <mat-icon>play_arrow</mat-icon> Start
+            <button mat-flat-button color="primary" (click)="openEncounter(appt)">
+              <mat-icon>play_arrow</mat-icon> Begin encounter
             </button>
             <button mat-button class="cal__btn-danger" (click)="cancelAppt(appt.id)">
               <mat-icon>cancel</mat-icon> Cancel
             </button>
           }
           @if (appt.status === 'IN_PROGRESS') {
-            <button mat-flat-button (click)="completeAppt(appt.id)">
-              <mat-icon>check_circle</mat-icon> Complete
+            <button mat-flat-button color="primary" (click)="openEncounter(appt)">
+              <mat-icon>edit_note</mat-icon> Open encounter
             </button>
           }
         </div>

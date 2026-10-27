@@ -19,7 +19,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Dashboard',        icon: 'dashboard',        route: '/dashboard' },
   { label: 'Calendar',         icon: 'calendar_month',   route: '/calendar' },
   { label: 'Patients',         icon: 'people',           route: '/patients' },
-  { label: 'Encounters',       icon: 'clinical_notes',   route: '/encounters' },
+  { label: 'Encounters',       icon: 'assignment',       route: '/encounters' },
   { label: 'Billing',          icon: 'receipt_long',     route: '/billing' },
   { label: 'Reports',          icon: 'bar_chart',        route: '/reports' },
   { label: 'Staff',            icon: 'badge',            route: '/staff' },
@@ -116,7 +116,7 @@ const NAV_ITEMS: NavItem[] = [
             <button mat-menu-item routerLink="/patients/new"><mat-icon>person_add</mat-icon>New Patient</button>
             <button mat-menu-item routerLink="/calendar/new"><mat-icon>event</mat-icon>New Appointment</button>
             <button mat-menu-item routerLink="/billing/invoices/new"><mat-icon>receipt</mat-icon>New Invoice</button>
-            <button mat-menu-item routerLink="/encounters/new"><mat-icon>clinical_notes</mat-icon>New Encounter</button>
+            <button mat-menu-item routerLink="/encounters/new"><mat-icon>assignment</mat-icon>New Encounter</button>
           </mat-menu>
 
           <!-- Notifications -->

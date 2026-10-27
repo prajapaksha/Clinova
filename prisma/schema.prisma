@@ -108,3 +108,60 @@ model Appointment {
   @@index([slotStart])
   @@index([status])
 }
+
+model Encounter {
+  id               String    @id @default(cuid())
+  patientId        String
+  providerId       String
+  appointmentId    String?   @unique
+  templateId       String?
+  status           String    @default("IN_PROGRESS")
+  vitalsJson       String    @default("[]")
+  noteJson         String
+  serviceCodesJson String    @default("[]")
+  addendaJson      String    @default("[]")
+  signedBy         String?
+  signedAt         DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  prescriptions Prescription[]
+
+  @@index([patientId])
+  @@index([providerId])
+  @@index([status])
+}
+
+model Prescription {
+  id                         String   @id @default(cuid())
+  encounterId                String
+  patientId                  String
+  prescriberId               String
+  drugJson                   String
+  refillsAllowed             Int      @default(0)
+  refillsRemaining           Int      @default(0)
+  instructions               String?
+  drugInteractionCheckPassed Boolean  @default(true)
+  allergyCheckPassed         Boolean  @default(true)
+  status                     String   @default("ACTIVE")
+  issuedAt                   DateTime @default(now())
+  pharmacyNotes              String?
+
+  encounter Encounter @relation(fields: [encounterId], references: [id], onDelete: Cascade)
+
+  @@index([encounterId])
+  @@index([patientId])
+}
+
+model EncounterTemplate {
+  id                  String   @id @default(cuid())
+  name                String
+  specialty           String?
+  defaultNoteJson     String
+  defaultCptCodesJson String   @default("[]")
+  createdBy           String
+  isShared            Boolean  @default(true)
+  isActive            Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}

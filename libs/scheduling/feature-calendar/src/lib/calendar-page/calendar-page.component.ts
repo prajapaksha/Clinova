@@ -1,7 +1,7 @@
 import { Component, computed, DestroyRef, effect, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DatePipe, TitleCasePipe } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -58,6 +58,7 @@ function formatHour(h: number): string {
 export class CalendarPageComponent {
   protected readonly store = inject(SchedulingStore);
   private readonly dialog = inject(MatDialog);
+  private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
 
   protected readonly startHour = START_HOUR;
@@ -218,12 +219,10 @@ export class CalendarPageComponent {
     this.clearSelection();
   }
 
-  protected startAppt(id: string): void {
-    this.store.checkIn(id as any);
-    this.clearSelection();
-  }
-
-  protected completeAppt(_id: string): void {
-    this.clearSelection();
+  /** Begins (or reopens) the clinical encounter; the encounter page marks the appointment In Progress. */
+  protected openEncounter(appt: Appointment): void {
+    this.router.navigate(['/encounters/new'], {
+      queryParams: { appointmentId: appt.id, patientId: appt.patientId },
+    });
   }
 }

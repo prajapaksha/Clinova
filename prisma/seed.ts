@@ -896,8 +896,187 @@ const STAFF_USERS = [
   { email: 'reception@clinova.health',  password: 'Staff@2026',      firstName: 'Marcus',  lastName: 'Grant',    role: 'STAFF' },
 ];
 
+// ─── encounter templates & sample notes ────────────────────────────────────
+
+const ENCOUNTER_TEMPLATES = [
+  {
+    name: 'Annual Physical',
+    specialty: 'Primary Care',
+    note: {
+      subjective: {
+        chiefComplaint: 'Annual wellness examination',
+        historyOfPresentIllness: 'Presents for routine annual exam. Interval history:',
+        reviewOfSystems: 'Constitutional: negative\nCardiovascular: negative\nRespiratory: negative\nGI: negative\nGU: negative\nMSK: negative\nNeuro: negative\nPsych: negative',
+      },
+      objective: {
+        physicalExamFindings: 'General: well-appearing, no acute distress\nHEENT: normocephalic, PERRL, TMs clear\nNeck: supple, no lymphadenopathy\nLungs: clear to auscultation bilaterally\nHeart: regular rate and rhythm, no murmurs\nAbdomen: soft, non-tender\nExtremities: no edema\nSkin: no concerning lesions',
+      },
+      plan: {
+        treatmentPlan: 'Age-appropriate screening reviewed. Immunizations updated as indicated.',
+        followUpInstructions: 'Return in 12 months for annual exam, sooner as needed.',
+      },
+    },
+  },
+  {
+    name: 'Follow-Up Visit',
+    specialty: 'Primary Care',
+    note: {
+      subjective: {
+        chiefComplaint: 'Follow-up',
+        historyOfPresentIllness: 'Here for follow-up of ___. Since last visit:\nMedication adherence:\nSide effects:',
+      },
+      plan: { followUpInstructions: 'Return in 3 months or sooner if symptoms worsen.' },
+    },
+  },
+  {
+    name: 'Headache',
+    specialty: 'Primary Care',
+    note: {
+      subjective: {
+        chiefComplaint: 'Headache',
+        historyOfPresentIllness: 'Onset:\nLocation:\nCharacter:\nSeverity (0-10):\nAssociated symptoms (nausea, photophobia, aura):\nRed flags (worst ever, thunderclap, fever, neuro deficits): denies',
+      },
+      objective: { physicalExamFindings: 'Neuro: alert and oriented, cranial nerves II-XII intact, strength 5/5 throughout, gait normal\nFundi: no papilledema' },
+      plan: { patientInstructions: 'Headache diary, hydration, regular sleep. Seek urgent care for sudden severe headache, weakness, or vision change.' },
+    },
+  },
+  {
+    name: 'Upper Respiratory Infection',
+    specialty: 'Primary Care',
+    note: {
+      subjective: {
+        chiefComplaint: 'Cough and congestion',
+        historyOfPresentIllness: 'Duration:\nFever:\nSore throat:\nSick contacts:',
+      },
+      objective: { physicalExamFindings: 'Pharynx: \nTMs: \nLungs: \nLymph: ' },
+      plan: { patientInstructions: 'Supportive care: fluids, rest, saline rinses. Return if fever persists >3 days or breathing worsens.' },
+    },
+  },
+  {
+    name: 'Well-Child Visit',
+    specialty: 'Pediatrics',
+    note: {
+      subjective: {
+        chiefComplaint: 'Well-child check',
+        historyOfPresentIllness: 'Diet:\nSleep:\nDevelopment/school:\nSafety (car seat, helmet, water):',
+      },
+      objective: { physicalExamFindings: 'Growth parameters reviewed on chart.\nGeneral: active, well-appearing' },
+      plan: { treatmentPlan: 'Anticipatory guidance provided. Vaccines per schedule.' },
+    },
+  },
+];
+
+const SAMPLE_ENCOUNTERS = [
+  {
+    note: {
+      subjective: {
+        chiefComplaint: 'Diabetes management — establishing care',
+        historyOfPresentIllness: 'Type 2 diabetes for 8 years. Home glucose 140-190 fasting. Reports good adherence to metformin. No hypoglycemia.',
+        reviewOfSystems: 'Denies polyuria, chest pain, vision changes. Occasional foot tingling.',
+      },
+      objective: {
+        physicalExamFindings: 'Well-appearing. Monofilament sensation diminished at both great toes. Pedal pulses 2+.',
+        relevantResults: 'HbA1c 8.1% (last month).',
+      },
+      assessment: {
+        diagnoses: [
+          { code: { code: 'E11.65', description: 'Type 2 diabetes mellitus with hyperglycemia' }, isPrimary: true, notes: null },
+          { code: { code: 'I10', description: 'Essential (primary) hypertension' }, isPrimary: false, notes: null },
+        ],
+        clinicalReasoning: 'Suboptimal control; early peripheral neuropathy.',
+      },
+      plan: {
+        treatmentPlan: 'Continue metformin. Dietitian referral. Annual eye exam.',
+        patientInstructions: 'Daily foot checks; log fasting glucose.',
+        followUpInstructions: 'Recheck HbA1c in 3 months.',
+        ordersNotes: 'HbA1c, BMP, urine microalbumin.',
+      },
+    },
+    vitals: [
+      { type: 'BP_SYSTOLIC', value: 142, unit: 'mmHg' },
+      { type: 'BP_DIASTOLIC', value: 88, unit: 'mmHg' },
+      { type: 'HEART_RATE', value: 78, unit: 'bpm' },
+      { type: 'TEMPERATURE', value: 98.4, unit: '°F' },
+    ],
+    prescriptions: [],
+    addendum: null as string | null,
+  },
+  {
+    note: {
+      subjective: {
+        chiefComplaint: 'Asthma follow-up',
+        historyOfPresentIllness: 'Using rescue inhaler 2-3 times weekly. Night waking once a week. No ED visits.',
+        reviewOfSystems: null,
+      },
+      objective: { physicalExamFindings: 'Lungs with scattered end-expiratory wheeze, good air movement.', relevantResults: null },
+      assessment: {
+        diagnoses: [{ code: { code: 'J45.909', description: 'Unspecified asthma, uncomplicated' }, isPrimary: true, notes: null }],
+        clinicalReasoning: 'Not well controlled on current regimen.',
+      },
+      plan: {
+        treatmentPlan: 'Step up to daily controller. Refill rescue inhaler.',
+        patientInstructions: 'Asthma action plan reviewed. Avoid NSAIDs (allergy).',
+        followUpInstructions: 'Return in 6 weeks.',
+        ordersNotes: null,
+      },
+    },
+    vitals: [
+      { type: 'HEART_RATE', value: 84, unit: 'bpm' },
+      { type: 'OXYGEN_SATURATION', value: 97, unit: '%' },
+      { type: 'RESPIRATORY_RATE', value: 16, unit: '/min' },
+    ],
+    prescriptions: [
+      {
+        drug: { medicationName: 'Albuterol HFA', strength: '90 mcg/actuation', form: 'Inhaler', route: 'Inhalation', dosageAmount: '2 puffs', frequency: 'Every 4-6 hours as needed', durationDays: null },
+        refills: 2,
+        instructions: 'Use for shortness of breath or wheeze.',
+      },
+      {
+        drug: { medicationName: 'Budesonide-Formoterol', strength: '160/4.5 mcg', form: 'Inhaler', route: 'Inhalation', dosageAmount: '2 puffs', frequency: 'Twice daily', durationDays: 30 },
+        refills: 5,
+        instructions: 'Rinse mouth after each use.',
+      },
+    ],
+    addendum: null as string | null,
+  },
+  {
+    note: {
+      subjective: {
+        chiefComplaint: 'Annual wellness examination',
+        historyOfPresentIllness: 'Feels well. Migraines 1-2 per month, controlled with sumatriptan. Taking levothyroxine daily.',
+        reviewOfSystems: 'Negative except as noted in HPI.',
+      },
+      objective: { physicalExamFindings: 'Normal exam. Thyroid non-enlarged, no nodules.', relevantResults: null },
+      assessment: {
+        diagnoses: [
+          { code: { code: 'Z00.00', description: 'Encounter for general adult medical examination without abnormal findings' }, isPrimary: true, notes: null },
+          { code: { code: 'E03.9', description: 'Hypothyroidism, unspecified' }, isPrimary: false, notes: null },
+        ],
+        clinicalReasoning: null,
+      },
+      plan: {
+        treatmentPlan: 'Continue current medications. Check TSH.',
+        patientInstructions: null,
+        followUpInstructions: 'Annual exam in 12 months.',
+        ordersNotes: 'TSH, lipid panel, vitamin D.',
+      },
+    },
+    vitals: [
+      { type: 'BP_SYSTOLIC', value: 118, unit: 'mmHg' },
+      { type: 'BP_DIASTOLIC', value: 74, unit: 'mmHg' },
+      { type: 'HEART_RATE', value: 68, unit: 'bpm' },
+      { type: 'TEMPERATURE', value: 98.2, unit: '°F' },
+    ],
+    prescriptions: [],
+    addendum: 'TSH 2.1 mIU/L — within range. Continue levothyroxine 100 mcg.' as string | null,
+  },
+];
+
 async function main() {
   console.log('🗑  Clearing existing data…');
+  await prisma.prescription.deleteMany({});
+  await prisma.encounter.deleteMany({});
+  await prisma.encounterTemplate.deleteMany({});
   await prisma.appointment.deleteMany({});
   await prisma.appointmentType.deleteMany({});
   await prisma.patient.deleteMany({});
@@ -949,44 +1128,96 @@ async function main() {
   const typeMap: Record<string, string> = {};
   for (const t of seededTypes) typeMap[t.name] = t.id;
 
-  function slot(dateStr: string, startHour: number, startMin: number, durationMin: number) {
-    const start = new Date(`${dateStr}T${String(startHour).padStart(2, '0')}:${String(startMin).padStart(2, '0')}:00`);
-    const end   = new Date(start.getTime() + durationMin * 60_000);
+  // Appointments are placed relative to today so the calendar always has current data.
+  function slot(dayOffset: number, startHour: number, startMin: number, durationMin: number) {
+    const start = new Date();
+    start.setDate(start.getDate() + dayOffset);
+    start.setHours(startHour, startMin, 0, 0);
+    const end = new Date(start.getTime() + durationMin * 60_000);
     return { slotStart: start, slotEnd: end };
   }
 
+  const at = (dayOffset: number, hour: number, min: number) => slot(dayOffset, hour, min, 0).slotStart;
+
   const sampleAppointments = [
-    // Monday 2026-05-11
-    { patientId: allPatients[0].id, providerId: chen.id,  appointmentTypeId: typeMap['New Patient Visit'],  ...slot('2026-05-11', 9,  0, 45), status: 'COMPLETED',  completedAt: new Date('2026-05-11T10:00:00'), reasonForVisit: 'Initial consultation for diabetes management' },
-    { patientId: allPatients[1].id, providerId: patel.id, appointmentTypeId: typeMap['Follow-Up Visit'],    ...slot('2026-05-11', 9,  0, 15), status: 'COMPLETED',  completedAt: new Date('2026-05-11T09:20:00'), reasonForVisit: 'Asthma follow-up' },
-    { patientId: allPatients[2].id, providerId: chen.id,  appointmentTypeId: typeMap['Annual Physical'],    ...slot('2026-05-11', 10, 0, 60), status: 'COMPLETED',  completedAt: new Date('2026-05-11T11:10:00'), reasonForVisit: 'Annual wellness exam' },
+    // Earlier this week — completed visits with signed notes
+    { patientId: allPatients[0].id, providerId: chen.id,  appointmentTypeId: typeMap['New Patient Visit'],  ...slot(-3, 9,  0, 45), status: 'COMPLETED',  checkedInAt: at(-3, 8, 50), completedAt: at(-3, 10, 0),  reasonForVisit: 'Initial consultation for diabetes management' },
+    { patientId: allPatients[1].id, providerId: patel.id, appointmentTypeId: typeMap['Follow-Up Visit'],    ...slot(-3, 9,  0, 15), status: 'COMPLETED',  checkedInAt: at(-3, 8, 55), completedAt: at(-3, 9, 20),  reasonForVisit: 'Asthma follow-up' },
+    { patientId: allPatients[2].id, providerId: chen.id,  appointmentTypeId: typeMap['Annual Physical'],    ...slot(-1, 10, 0, 60), status: 'COMPLETED',  checkedInAt: at(-1, 9, 50), completedAt: at(-1, 11, 10), reasonForVisit: 'Annual wellness exam' },
 
-    // Tuesday 2026-05-12
-    { patientId: allPatients[3].id, providerId: patel.id, appointmentTypeId: typeMap['New Patient Visit'],  ...slot('2026-05-12', 9,  0, 45), status: 'CHECKED_IN', checkedInAt:  new Date('2026-05-12T08:55:00'), reasonForVisit: 'Evaluation of heart failure symptoms' },
-    { patientId: allPatients[4].id, providerId: chen.id,  appointmentTypeId: typeMap['Follow-Up Visit'],    ...slot('2026-05-12', 9,  0, 15), status: 'CONFIRMED',  reasonForVisit: 'Post-surgery knee check' },
-    { patientId: allPatients[5].id, providerId: patel.id, appointmentTypeId: typeMap['Urgent Care'],        ...slot('2026-05-12', 10, 0, 30), status: 'SCHEDULED',  reasonForVisit: 'Acute asthma exacerbation' },
+    // Today
+    { patientId: allPatients[3].id, providerId: chen.id,  appointmentTypeId: typeMap['New Patient Visit'],  ...slot(0, 9,  0, 45), status: 'CHECKED_IN', checkedInAt: at(0, 8, 55), reasonForVisit: 'Evaluation of heart failure symptoms' },
+    { patientId: allPatients[4].id, providerId: chen.id,  appointmentTypeId: typeMap['Follow-Up Visit'],    ...slot(0, 10, 0, 15), status: 'CONFIRMED',  reasonForVisit: 'Post-surgery knee check' },
+    { patientId: allPatients[5].id, providerId: patel.id, appointmentTypeId: typeMap['Urgent Care'],        ...slot(0, 10, 0, 30), status: 'SCHEDULED',  reasonForVisit: 'Acute asthma exacerbation' },
+    { patientId: allPatients[6].id, providerId: patel.id, appointmentTypeId: typeMap['Follow-Up Visit'],    ...slot(0, 14, 0, 15), status: 'CHECKED_IN', checkedInAt: at(0, 13, 50), reasonForVisit: 'Migraine follow-up' },
 
-    // Wednesday 2026-05-13
-    { patientId: allPatients[6].id, providerId: chen.id,  appointmentTypeId: typeMap['Annual Physical'],    ...slot('2026-05-13', 9,  0, 60), status: 'CONFIRMED',  reasonForVisit: 'Annual physical' },
-    { patientId: allPatients[0].id, providerId: patel.id, appointmentTypeId: typeMap['Follow-Up Visit'],    ...slot('2026-05-13', 10, 0, 15), status: 'SCHEDULED',  reasonForVisit: 'Review lab results' },
-    { patientId: allPatients[7].id, providerId: chen.id,  appointmentTypeId: typeMap['Procedure'],          ...slot('2026-05-13', 11, 0, 90), status: 'SCHEDULED',  reasonForVisit: 'Minor procedure — wound care' },
-
-    // Thursday 2026-05-14
-    { patientId: allPatients[1].id, providerId: patel.id, appointmentTypeId: typeMap['Annual Physical'],    ...slot('2026-05-14', 9,  0, 60), status: 'SCHEDULED',  reasonForVisit: 'Annual wellness exam' },
-    { patientId: allPatients[2].id, providerId: chen.id,  appointmentTypeId: typeMap['Follow-Up Visit'],    ...slot('2026-05-14', 10, 0, 15), status: 'SCHEDULED',  reasonForVisit: 'Hypothyroidism medication review' },
-
-    // Friday 2026-05-15
-    { patientId: allPatients[3].id, providerId: chen.id,  appointmentTypeId: typeMap['Urgent Care'],        ...slot('2026-05-15', 9,  0, 30), status: 'SCHEDULED',  reasonForVisit: 'Urgent: chest tightness' },
-    { patientId: allPatients[4].id, providerId: patel.id, appointmentTypeId: typeMap['New Patient Visit'],  ...slot('2026-05-15', 10, 0, 45), status: 'SCHEDULED',  reasonForVisit: 'New patient — post-ACL recovery' },
+    // Upcoming
+    { patientId: allPatients[7].id, providerId: chen.id,  appointmentTypeId: typeMap['Annual Physical'],    ...slot(1, 9,  0, 60), status: 'CONFIRMED',  reasonForVisit: 'Annual physical' },
+    { patientId: allPatients[0].id, providerId: patel.id, appointmentTypeId: typeMap['Follow-Up Visit'],    ...slot(1, 10, 0, 15), status: 'SCHEDULED',  reasonForVisit: 'Review lab results' },
+    { patientId: allPatients[1].id, providerId: patel.id, appointmentTypeId: typeMap['Annual Physical'],    ...slot(2, 9,  0, 60), status: 'SCHEDULED',  reasonForVisit: 'Annual wellness exam' },
+    { patientId: allPatients[2].id, providerId: chen.id,  appointmentTypeId: typeMap['Follow-Up Visit'],    ...slot(2, 10, 0, 15), status: 'SCHEDULED',  reasonForVisit: 'Hypothyroidism medication review' },
+    { patientId: allPatients[3].id, providerId: chen.id,  appointmentTypeId: typeMap['Urgent Care'],        ...slot(3, 9,  0, 30), status: 'SCHEDULED',  reasonForVisit: 'Urgent: chest tightness' },
+    { patientId: allPatients[4].id, providerId: patel.id, appointmentTypeId: typeMap['Procedure'],          ...slot(3, 11, 0, 90), status: 'SCHEDULED',  reasonForVisit: 'Minor procedure — wound care' },
   ];
 
+  const createdAppointments = [];
   for (const appt of sampleAppointments) {
     const row = await prisma.appointment.create({ data: appt as any });
+    createdAppointments.push(row);
     console.log(
       `  ✓ [${row.status.padEnd(10)}]  ${row.slotStart.toISOString().slice(0, 16)}  patient:${row.patientId.slice(-6)}  provider:${row.providerId.slice(-6)}`,
     );
   }
   console.log(`\n✅ Seeded ${sampleAppointments.length} appointments.`);
+
+  // ─── encounter templates ─────────────────────────────────────────────────
+  console.log('\n🧩 Seeding encounter templates…\n');
+  for (const t of ENCOUNTER_TEMPLATES) {
+    await prisma.encounterTemplate.create({
+      data: { name: t.name, specialty: t.specialty, defaultNoteJson: JSON.stringify(t.note), createdBy: chen.id },
+    });
+    console.log(`  ✓ ${t.name}`);
+  }
+
+  // ─── signed encounters for completed visits ──────────────────────────────
+  console.log('\n🩺 Seeding clinical encounters…\n');
+  const completed = createdAppointments.filter(a => a.status === 'COMPLETED');
+  for (const [i, appt] of completed.entries()) {
+    const sample = SAMPLE_ENCOUNTERS[i];
+    const signedAt = appt.completedAt ?? new Date();
+    const enc = await prisma.encounter.create({
+      data: {
+        patientId: appt.patientId,
+        providerId: appt.providerId,
+        appointmentId: appt.id,
+        status: sample.addendum ? 'AMENDED' : 'SIGNED',
+        noteJson: JSON.stringify(sample.note),
+        vitalsJson: JSON.stringify(sample.vitals.map(v => ({ ...v, recordedAt: appt.checkedInAt, recordedBy: appt.providerId }))),
+        addendaJson: JSON.stringify(sample.addendum
+          ? [{ addedBy: appt.providerId, addedAt: new Date(signedAt.getTime() + 86_400_000).toISOString(), content: sample.addendum }]
+          : []),
+        signedBy: appt.providerId,
+        signedAt,
+        createdAt: appt.checkedInAt ?? signedAt,
+      },
+    });
+    for (const rx of sample.prescriptions) {
+      await prisma.prescription.create({
+        data: {
+          encounterId: enc.id,
+          patientId: appt.patientId,
+          prescriberId: appt.providerId,
+          drugJson: JSON.stringify(rx.drug),
+          refillsAllowed: rx.refills,
+          refillsRemaining: rx.refills,
+          instructions: rx.instructions,
+          issuedAt: signedAt,
+        },
+      });
+    }
+    console.log(`  ✓ [${enc.status}]  ${sample.note.subjective.chiefComplaint}`);
+  }
+  console.log(`\n✅ Seeded ${ENCOUNTER_TEMPLATES.length} templates and ${completed.length} encounters.`);
 }
 
 main()

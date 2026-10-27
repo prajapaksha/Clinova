@@ -1,5 +1,6 @@
 import { Component, computed, effect, inject } from '@angular/core';
 import { DatePipe, TitleCasePipe } from '@angular/common';
+import { RouterModule } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -12,7 +13,7 @@ import { BookAppointmentDialog } from '@clinova/scheduling/feature-calendar';
   selector: 'clv-appointments-tab',
   standalone: true,
   imports: [
-    DatePipe, TitleCasePipe,
+    DatePipe, TitleCasePipe, RouterModule,
     MatButtonModule, MatIconModule, MatProgressSpinnerModule,
   ],
   templateUrl: './appointments-tab.component.html',

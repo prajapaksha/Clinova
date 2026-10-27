@@ -1,0 +1,107 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: var(--clv-space-5);
+}
+
+// ── Context panel content ───────────────────────────────────────────────────
+.ctx {
+  &__identity {
+    display: flex;
+    align-items: center;
+    gap: var(--clv-space-3);
+  }
+
+  &__avatar {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: var(--clv-primary-100);
+    color: var(--clv-primary-800);
+    font-weight: 600;
+  }
+
+  &__name { margin: 0; font-size: 1.05rem; font-weight: 600; }
+  &__sub { margin: 2px 0 0; font-size: 0.8rem; color: var(--clv-gray-600); }
+
+  &__section {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  &__heading {
+    margin: 0 0 2px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--clv-gray-600);
+  }
+
+  &__empty { margin: 0; font-size: 0.85rem; color: var(--clv-gray-500); }
+
+  &__allergy {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    background: var(--clv-gray-100);
+    font-size: 0.85rem;
+
+    span:first-of-type { flex: 1; }
+
+    &--critical {
+      background: var(--clv-danger-bg);
+      border: 1px solid var(--clv-danger-border);
+      color: var(--clv-danger-text);
+      font-weight: 600;
+
+      mat-icon { font-size: 18px; width: 18px; height: 18px; }
+    }
+  }
+
+  &__badge {
+    padding: 1px 6px;
+    border-radius: 4px;
+    background: var(--clv-allergy-bg);
+    color: var(--clv-allergy-text);
+    font-size: 0.65rem;
+    text-transform: uppercase;
+  }
+
+  &__severity {
+    font-size: 0.7rem;
+    text-transform: capitalize;
+    color: var(--clv-gray-600);
+  }
+
+  &__med {
+    margin: 0;
+    padding: 6px 10px;
+    border-left: 3px solid var(--clv-primary-300);
+    font-size: 0.85rem;
+  }
+
+  &__vitals {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--clv-space-2);
+
+    div {
+      display: flex;
+      flex-direction: column;
+      padding: 8px 10px;
+      border-radius: 6px;
+      background: var(--clv-gray-50);
+    }
+    span { font-size: 0.7rem; color: var(--clv-gray-600); }
+    strong { font-size: 0.95rem; }
+  }
+
+  &__history { align-self: stretch; }
+}

@@ -1,0 +1,103 @@
+<h2 mat-dialog-title>Prescribe medication</h2>
+<mat-dialog-content>
+  <p class="rx__patient">For <strong>{{ data.patientName }}</strong></p>
+
+  <mat-form-field appearance="outline" class="rx__full">
+    <mat-label>Search drug</mat-label>
+    <mat-icon matPrefix>search</mat-icon>
+    <input matInput [formControl]="drugQuery" [matAutocomplete]="drugAuto" (blur)="useTypedName()"
+           placeholder="e.g. amoxicillin, lisinopril" cdkFocusInitial />
+    <mat-autocomplete #drugAuto="matAutocomplete" [displayWith]="displayDrug" (optionSelected)="selectDrug($event)">
+      @for (d of drugResults(); track d.name + d.strength) {
+        <mat-option [value]="d">
+          <strong>{{ d.name }}</strong> {{ d.strength }} <span class="rx__muted">· {{ d.form }}</span>
+        </mat-option>
+      }
+    </mat-autocomplete>
+  </mat-form-field>
+
+  <!-- Safety checks -->
+  <div class="rx__safety" aria-live="polite">
+    @if (checking()) {
+      <div class="rx__checking"><mat-spinner diameter="16" /> Checking allergies and interactions…</div>
+    } @else if (safety(); as s) {
+      @if (!hasAlerts()) {
+        <div class="rx__ok"><mat-icon>verified_user</mat-icon> No allergy or interaction alerts found.</div>
+      }
+      @for (a of s.allergyAlerts; track a.allergen) {
+        <div class="rx__alert rx__alert--allergy" role="alert">
+          <mat-icon>warning</mat-icon>
+          <div><strong>Allergy · {{ a.allergen }}</strong> ({{ a.severity.toLowerCase() }}) — {{ a.reason }}
+            <span class="rx__muted">Reaction: {{ a.reaction }}</span></div>
+        </div>
+      }
+      @for (i of s.interactionAlerts; track i.withMedication + i.message) {
+        <div class="rx__alert" [attr.data-severity]="i.severity" role="alert">
+          <mat-icon>sync_problem</mat-icon>
+          <div><strong>{{ i.severity.toLowerCase() }} interaction · {{ i.withMedication }}</strong> — {{ i.message }}</div>
+        </div>
+      }
+    }
+  </div>
+
+  <form [formGroup]="form" class="rx__grid" (ngSubmit)="submit()">
+    <mat-form-field appearance="outline" class="rx__span2">
+      <mat-label>Medication</mat-label>
+      <input matInput formControlName="medicationName" />
+      @if (form.controls.medicationName.hasError('required')) { <mat-error>Select or enter a medication</mat-error> }
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>Strength</mat-label>
+      <input matInput formControlName="strength" />
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>Form</mat-label>
+      <input matInput formControlName="form" />
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>Dose</mat-label>
+      <input matInput formControlName="dosageAmount" />
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>Route</mat-label>
+      <input matInput formControlName="route" />
+    </mat-form-field>
+    <mat-form-field appearance="outline" class="rx__span2">
+      <mat-label>Frequency</mat-label>
+      <mat-select formControlName="frequency">
+        @for (f of frequencies; track f) { <mat-option [value]="f">{{ f }}</mat-option> }
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>Duration</mat-label>
+      <input matInput type="number" formControlName="durationDays" min="1" max="365" />
+      <span matTextSuffix>days</span>
+      @if (form.controls.durationDays.invalid) { <mat-error>1–365 days</mat-error> }
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>Refills</mat-label>
+      <input matInput type="number" formControlName="refillsAllowed" min="0" max="11" />
+      @if (form.controls.refillsAllowed.invalid) { <mat-error>0–11 refills</mat-error> }
+    </mat-form-field>
+    <mat-form-field appearance="outline" class="rx__span2">
+      <mat-label>Patient instructions (sig)</mat-label>
+      <textarea matInput formControlName="instructions" rows="2"></textarea>
+    </mat-form-field>
+  </form>
+
+  @if (hasAlerts()) {
+    <mat-checkbox [formControl]="acknowledged" class="rx__ack">
+      I have reviewed these alerts and want to prescribe anyway.
+    </mat-checkbox>
+  }
+  @if (error()) {
+    <p class="rx__error" role="alert">{{ error() }}</p>
+  }
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button mat-dialog-close type="button">Cancel</button>
+  <button mat-flat-button color="primary" type="button" (click)="submit()"
+          [disabled]="submitting() || checking() || (hasAlerts() && !acknowledged.value)">
+    @if (submitting()) { <mat-spinner diameter="18" /> } @else { Prescribe }
+  </button>
+</mat-dialog-actions>

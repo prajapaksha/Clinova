@@ -4,7 +4,7 @@ import { withEntities, setAllEntities, setEntity } from '@ngrx/signals/entities'
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { tapResponse } from '@ngrx/operators';
 import { pipe, switchMap, tap } from 'rxjs';
-import type { Encounter, EncounterId, EncounterFilters, EncounterTemplate, TemplateId } from '@clinova/clinical/domain';
+import type { DrugCatalogEntry, Encounter, EncounterId, EncounterFilters, EncounterTemplate } from '@clinova/clinical/domain';
 import { EncounterStatus } from '@clinova/clinical/domain';
 import { ClinicalApiService, type StartEncounterDto, type IssuePrescriptionDto } from './clinical.api';
 
@@ -12,7 +12,7 @@ interface ClinicalState {
   selectedEncounterId: string | null;
   templates: EncounterTemplate[];
   icd10SearchResults: Array<{ code: string; description: string }>;
-  drugSearchResults: Array<{ name: string; form: string; strength: string }>;
+  drugSearchResults: DrugCatalogEntry[];
   loading: boolean;
   saving: boolean;
   error: string | null;
@@ -50,7 +50,7 @@ export const ClinicalStore = signalStore(
       switchMap(filters => api.getEncounters(filters).pipe(
         tapResponse({
           next: result => patchState(store, setAllEntities(result.encounters), { total: result.total, loading: false }),
-          error: (e: Error) => patchState(store, { error: e.message, loading: false }),
+          error: (e: Error) => patchState(store, setAllEntities([] as Encounter[]), { error: e.message, total: 0, loading: false }),
         })
       ))
     )),
@@ -95,8 +95,9 @@ export const ClinicalStore = signalStore(
 
     issuePrescription: rxMethod<{ encounterId: EncounterId; dto: IssuePrescriptionDto }>(pipe(
       switchMap(({ encounterId, dto }) => api.issuePrescription(encounterId, dto).pipe(
+        switchMap(() => api.findById(encounterId)),
         tapResponse({
-          next: () => { /* reload encounter to reflect new prescription */ },
+          next: enc => patchState(store, setEntity(enc)),
           error: (e: Error) => patchState(store, { error: e.message }),
         })
       ))

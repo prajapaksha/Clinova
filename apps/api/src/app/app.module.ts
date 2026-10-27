@@ -7,10 +7,11 @@ import { AuthModule } from '../auth/auth.module';
 import { StaffModule } from '../staff/staff.module';
 import { PatientsModule } from '../patients/patients.module';
 import { AppointmentsModule } from './appointments/appointments.module';
+import { EncountersModule } from '../encounters/encounters.module';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @Module({
-  imports: [PrismaModule, StaffModule, AuthModule, PatientsModule, AppointmentsModule],
+  imports: [PrismaModule, StaffModule, AuthModule, PatientsModule, AppointmentsModule, EncountersModule],
   controllers: [AppController],
   providers: [
     AppService,

@@ -1,0 +1,56 @@
+@let p = patient();
+<div class="ctx__identity">
+  <div class="ctx__avatar" aria-hidden="true">{{ p.firstName[0] }}{{ p.lastName[0] }}</div>
+  <div>
+    <h2 class="ctx__name">{{ p.firstName }} {{ p.lastName }}</h2>
+    <p class="ctx__sub">{{ p.mrn }} · {{ ageYears() }} y/o · {{ p.sex.toLowerCase() }}</p>
+  </div>
+</div>
+
+<section class="ctx__section">
+  <h3 class="ctx__heading">Allergies</h3>
+  @if (p.allergies.length === 0) {
+    <p class="ctx__empty">No known allergies</p>
+  }
+  @for (a of criticalAllergies(); track a.id) {
+    <div class="ctx__allergy ctx__allergy--critical" [matTooltip]="a.reaction">
+      <mat-icon>warning</mat-icon>
+      <span>{{ a.allergen }}</span>
+      <span class="ctx__badge">Critical</span>
+    </div>
+  }
+  @for (a of otherAllergies(); track a.id) {
+    <div class="ctx__allergy" [matTooltip]="a.reaction">
+      <span>{{ a.allergen }}</span>
+      <span class="ctx__severity">{{ a.severity.toLowerCase() }}</span>
+    </div>
+  }
+</section>
+
+<section class="ctx__section">
+  <h3 class="ctx__heading">Active medications</h3>
+  @for (med of p.currentMedications; track med) {
+    <p class="ctx__med">{{ med }}</p>
+  } @empty {
+    <p class="ctx__empty">None recorded</p>
+  }
+</section>
+
+<section class="ctx__section">
+  @if (lastVitals(); as lv) {
+    <h3 class="ctx__heading">Last vitals ({{ lv.date | date:'MMM d' }})</h3>
+    <div class="ctx__vitals">
+      <div><span>BP</span><strong>{{ lv.bp ?? '—' }}</strong></div>
+      <div><span>HR</span><strong>{{ lv.hr ?? '—' }}</strong></div>
+      <div><span>Temp</span><strong>{{ lv.temp ?? '—' }}</strong></div>
+      <div><span>SpO₂</span><strong>{{ lv.spo2 !== null ? lv.spo2 + '%' : '—' }}</strong></div>
+    </div>
+  } @else {
+    <h3 class="ctx__heading">Last vitals</h3>
+    <p class="ctx__empty">No prior vitals</p>
+  }
+</section>
+
+<a mat-stroked-button class="ctx__history" [routerLink]="['/patients', p.id, 'notes']">
+  <mat-icon>history</mat-icon> View full history
+</a>

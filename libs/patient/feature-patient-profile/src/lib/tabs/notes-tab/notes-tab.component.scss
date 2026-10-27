@@ -10,6 +10,77 @@
 
   &__title { font-size: 1rem; font-weight: 600; margin: 0; }
 
+  &__loading { display: flex; justify-content: center; padding: 32px; }
+
+  &__timeline {
+    list-style: none;
+    margin: 0;
+    padding: 0 0 0 20px;
+    border-left: 2px solid var(--clv-gray-200);
+  }
+
+  &__item {
+    position: relative;
+    margin-bottom: 16px;
+  }
+
+  &__dot {
+    position: absolute;
+    left: -27px;
+    top: 18px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    background: var(--clv-status-in-progress);
+
+    &[data-status='SIGNED'] { background: var(--clv-status-completed); }
+    &[data-status='AMENDED'] { background: var(--clv-status-confirmed); }
+    &[data-status='DRAFT'] { background: var(--clv-status-scheduled); }
+  }
+
+  &__card {
+    display: block;
+    padding: 14px 16px;
+    border: 1px solid var(--clv-gray-200);
+    border-radius: 10px;
+    color: inherit;
+    text-decoration: none;
+    background: #fff;
+
+    &:hover, &:focus-visible { border-color: var(--clv-primary-300); background: var(--clv-primary-50); }
+  }
+
+  &__card-top {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  &__status {
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: capitalize;
+    color: var(--clv-status-in-progress);
+
+    &[data-status='SIGNED'] { color: var(--clv-status-completed); }
+    &[data-status='AMENDED'] { color: var(--clv-status-confirmed); }
+  }
+
+  &__meta { margin-top: 2px; font-size: 0.8rem; color: var(--clv-gray-600); }
+  &__dx { margin-top: 6px; font-size: 0.875rem; }
+
+  &__extras {
+    display: flex;
+    gap: 16px;
+    margin-top: 8px;
+    font-size: 0.78rem;
+    color: var(--clv-gray-700);
+
+    span { display: inline-flex; align-items: center; gap: 4px; }
+    mat-icon { font-size: 16px; width: 16px; height: 16px; }
+  }
+
   &__empty {
     display: flex;
     flex-direction: column;
@@ -20,9 +91,8 @@
     border-radius: 8px;
     text-align: center;
     color: var(--mat-sys-on-surface-variant, #9ca3af);
+    list-style: none;
   }
 
   &__empty-icon { font-size: 48px !important; width: 48px; height: 48px; opacity: 0.3; }
-
-  &__hint { font-size: 0.875rem; max-width: 360px; }
 }

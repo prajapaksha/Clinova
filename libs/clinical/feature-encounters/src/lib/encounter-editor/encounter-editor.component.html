@@ -1,0 +1,322 @@
+@if (loading()) {
+  <div class="enc__state"><mat-spinner diameter="40" /></div>
+} @else if (loadError()) {
+  <div class="enc__state enc__state--error">
+    <mat-icon>error_outline</mat-icon>
+    <p>{{ loadError() }}</p>
+    <a mat-stroked-button routerLink="/encounters">Back to encounters</a>
+  </div>
+} @else if (encounter(); as enc) {
+  <div class="enc">
+
+    <!-- ── Patient context ─────────────────────────────────────────────── -->
+    <aside class="enc__context" aria-label="Patient context">
+      @if (patient(); as p) {
+        <clv-encounter-context [patient]="p" [history]="history()" [currentEncounterId]="enc.id" />
+      }
+    </aside>
+
+    <!-- ── Note ────────────────────────────────────────────────────────── -->
+    <section class="enc__main">
+      <header class="enc__header">
+        <div>
+          <span class="enc__overline">{{ editable() ? 'Active encounter' : 'Signed encounter' }}</span>
+          <h1 class="enc__title">Clinical SOAP Note</h1>
+          <p class="enc__meta">
+            {{ enc.createdAt | date:'EEE, MMM d, y · h:mm a' }} · {{ enc.providerName }}
+            @if (enc.reasonForVisit) { · {{ enc.reasonForVisit }} }
+            <span class="enc__status" [attr.data-status]="enc.status">{{ enc.status.replace('_', ' ').toLowerCase() }}</span>
+          </p>
+        </div>
+        @if (editable()) {
+          <div class="enc__save" role="status" aria-live="polite" [attr.data-state]="saveState()">
+            @switch (saveState()) {
+              @case ('saving') { <mat-spinner diameter="14" /> Saving… }
+              @case ('pending') { <mat-icon>edit</mat-icon> Unsaved changes }
+              @case ('error') { <mat-icon>cloud_off</mat-icon> Not saved — retrying on next change }
+              @case ('saved') { <mat-icon>history</mat-icon> Auto-saved at {{ lastSavedAt() | date:'h:mm a' }} }
+              @default { <mat-icon>cloud_done</mat-icon> All changes saved }
+            }
+          </div>
+        }
+      </header>
+
+      @if (!editable()) {
+        <div class="enc__signed" role="note">
+          <mat-icon>verified</mat-icon>
+          <span>Signed by <strong>{{ enc.signedByName }}</strong> on {{ enc.signedAt | date:'MMM d, y · h:mm a' }}. This note is locked; changes require an addendum.</span>
+        </div>
+      }
+
+      <form [formGroup]="form" class="enc__form">
+        <mat-accordion multi displayMode="flat">
+
+          <!-- Subjective -->
+          <mat-expansion-panel expanded formGroupName="subjective">
+            <mat-expansion-panel-header>
+              <mat-panel-title><mat-icon>record_voice_over</mat-icon> Subjective</mat-panel-title>
+            </mat-expansion-panel-header>
+
+            @if (editable() && templates().length) {
+              <div class="enc__templates" aria-label="Apply template">
+                <span class="enc__hint">Templates:</span>
+                @for (t of templates(); track t.id) {
+                  <button mat-stroked-button type="button" class="enc__chip-btn" (click)="applyTemplate(t)">{{ t.name }}</button>
+                }
+              </div>
+            }
+
+            <mat-form-field appearance="outline" class="enc__full">
+              <mat-label>Chief complaint</mat-label>
+              <input matInput formControlName="chiefComplaint" maxlength="2000" required />
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="enc__full">
+              <mat-label>History of present illness</mat-label>
+              <textarea matInput formControlName="historyOfPresentIllness" rows="5"
+                        placeholder="Onset, duration, severity, associated symptoms…"></textarea>
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="enc__full">
+              <mat-label>Review of systems</mat-label>
+              <textarea matInput formControlName="reviewOfSystems" rows="3"></textarea>
+            </mat-form-field>
+          </mat-expansion-panel>
+
+          <!-- Objective -->
+          <mat-expansion-panel expanded>
+            <mat-expansion-panel-header>
+              <mat-panel-title><mat-icon>medical_services</mat-icon> Objective</mat-panel-title>
+            </mat-expansion-panel-header>
+
+            <h4 class="enc__subheading">Vitals</h4>
+            <div class="enc__vitals" formGroupName="vitals">
+              <div class="enc__bp">
+                <mat-form-field appearance="outline">
+                  <mat-label>BP systolic</mat-label>
+                  <input matInput type="number" formControlName="BP_SYSTOLIC" min="40" max="300" />
+                  <span matTextSuffix>mmHg</span>
+                </mat-form-field>
+                <span class="enc__bp-sep" aria-hidden="true">/</span>
+                <mat-form-field appearance="outline">
+                  <mat-label>Diastolic</mat-label>
+                  <input matInput type="number" formControlName="BP_DIASTOLIC" min="20" max="200" />
+                  <span matTextSuffix>mmHg</span>
+                </mat-form-field>
+              </div>
+              <mat-form-field appearance="outline">
+                <mat-label>Heart rate</mat-label>
+                <input matInput type="number" formControlName="HEART_RATE" min="20" max="250" />
+                <span matTextSuffix>bpm</span>
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Temperature</mat-label>
+                <input matInput type="number" formControlName="TEMPERATURE" step="0.1" min="90" max="110" />
+                <span matTextSuffix>°F</span>
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Resp. rate</mat-label>
+                <input matInput type="number" formControlName="RESPIRATORY_RATE" min="4" max="60" />
+                <span matTextSuffix>/min</span>
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>SpO₂</mat-label>
+                <input matInput type="number" formControlName="OXYGEN_SATURATION" min="50" max="100" />
+                <span matTextSuffix>%</span>
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Weight</mat-label>
+                <input matInput type="number" formControlName="WEIGHT_KG" step="0.1" min="0" />
+                <span matTextSuffix>kg</span>
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Height</mat-label>
+                <input matInput type="number" formControlName="HEIGHT_CM" step="0.1" min="0" />
+                <span matTextSuffix>cm</span>
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Pain</mat-label>
+                <input matInput type="number" formControlName="PAIN_SCALE" min="0" max="10" />
+                <span matTextSuffix>/10</span>
+              </mat-form-field>
+              <div class="enc__bmi" aria-live="polite">
+                <span>BMI</span>
+                <strong>{{ bmi() ?? '—' }}</strong>
+              </div>
+            </div>
+
+            <ng-container formGroupName="objective">
+              <mat-form-field appearance="outline" class="enc__full">
+                <mat-label>Physical examination</mat-label>
+                <textarea matInput formControlName="physicalExamFindings" rows="5"
+                          placeholder="General appearance, findings by system…"></textarea>
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="enc__full">
+                <mat-label>Lab / imaging results referenced</mat-label>
+                <textarea matInput formControlName="relevantResults" rows="2"></textarea>
+              </mat-form-field>
+            </ng-container>
+          </mat-expansion-panel>
+
+          <!-- Assessment -->
+          <mat-expansion-panel expanded formGroupName="assessment">
+            <mat-expansion-panel-header>
+              <mat-panel-title><mat-icon>fact_check</mat-icon> Assessment</mat-panel-title>
+            </mat-expansion-panel-header>
+
+            @if (editable()) {
+              <mat-form-field appearance="outline" class="enc__full">
+                <mat-label>ICD-10 diagnosis search</mat-label>
+                <mat-icon matPrefix>search</mat-icon>
+                <input matInput [formControl]="icd10Query" [matAutocomplete]="icdAuto"
+                       placeholder="Search by name or ICD-10 code…" />
+                <mat-autocomplete #icdAuto="matAutocomplete" [displayWith]="displayIcd10"
+                                  (optionSelected)="selectDiagnosis($event)">
+                  @for (r of icd10Results(); track r.code) {
+                    <mat-option [value]="r">
+                      <span class="enc__icd-code">{{ r.code }}</span> {{ r.description }}
+                    </mat-option>
+                  }
+                </mat-autocomplete>
+              </mat-form-field>
+            }
+
+            <ul class="enc__dx-list" aria-label="Diagnoses">
+              @for (d of diagnoses(); track d.code.code) {
+                <li class="enc__dx" [class.enc__dx--primary]="d.isPrimary">
+                  <span class="enc__icd-code">{{ d.code.code }}</span>
+                  <span class="enc__dx-desc">{{ d.code.description }}</span>
+                  @if (d.isPrimary) {
+                    <span class="enc__dx-primary">Primary</span>
+                  } @else if (editable()) {
+                    <button mat-button type="button" (click)="setPrimary(d.code.code)">Make primary</button>
+                  }
+                  @if (editable()) {
+                    <button mat-icon-button type="button" (click)="removeDiagnosis(d.code.code)"
+                            [attr.aria-label]="'Remove ' + d.code.code">
+                      <mat-icon>close</mat-icon>
+                    </button>
+                  }
+                </li>
+              } @empty {
+                <li class="enc__empty">No diagnoses added yet.</li>
+              }
+            </ul>
+
+            <mat-form-field appearance="outline" class="enc__full">
+              <mat-label>Differential diagnoses & clinical reasoning</mat-label>
+              <textarea matInput formControlName="clinicalReasoning" rows="3"></textarea>
+            </mat-form-field>
+          </mat-expansion-panel>
+
+          <!-- Plan -->
+          <mat-expansion-panel expanded formGroupName="plan">
+            <mat-expansion-panel-header>
+              <mat-panel-title><mat-icon>event_repeat</mat-icon> Plan</mat-panel-title>
+            </mat-expansion-panel-header>
+
+            <mat-form-field appearance="outline" class="enc__full">
+              <mat-label>Treatment plan</mat-label>
+              <textarea matInput formControlName="treatmentPlan" rows="4"
+                        placeholder="Diagnostic tests, therapeutic interventions…"></textarea>
+            </mat-form-field>
+
+            <h4 class="enc__subheading">Prescriptions</h4>
+            <ul class="enc__rx-list">
+              @for (rx of enc.prescriptions; track rx.id) {
+                <li class="enc__rx" [class.enc__rx--inactive]="rx.status !== 'ACTIVE'">
+                  <mat-icon>medication</mat-icon>
+                  <div class="enc__rx-body">
+                    <strong>{{ rx.drug.medicationName }} {{ rx.drug.strength }}</strong>
+                    <span>{{ rx.drug.dosageAmount }} · {{ rx.drug.route }} · {{ rx.drug.frequency }}
+                      @if (rx.drug.durationDays) { · {{ rx.drug.durationDays }} days }
+                      · {{ rx.refillsAllowed }} refill{{ rx.refillsAllowed === 1 ? '' : 's' }}</span>
+                    @if (!rx.allergyCheckPassed || !rx.drugInteractionCheckPassed) {
+                      <span class="enc__rx-warn"><mat-icon>report</mat-icon> Issued with acknowledged safety alerts</span>
+                    }
+                  </div>
+                  @if (rx.status !== 'ACTIVE') {
+                    <span class="enc__rx-status">{{ rx.status.toLowerCase() }}</span>
+                  } @else if (editable() && isPhysician()) {
+                    <button mat-button type="button" (click)="discontinuePrescription(rx)">Discontinue</button>
+                  }
+                </li>
+              } @empty {
+                <li class="enc__empty">No prescriptions issued.</li>
+              }
+            </ul>
+
+            @if (editable()) {
+              <div class="enc__plan-actions">
+                @if (isPhysician()) {
+                  <button mat-stroked-button type="button" (click)="openPrescriptionDialog()">
+                    <mat-icon>medication</mat-icon> Prescribe medication
+                  </button>
+                }
+                <button mat-stroked-button type="button" [matMenuTriggerFor]="labMenu">
+                  <mat-icon>science</mat-icon> Order lab work
+                </button>
+                <mat-menu #labMenu="matMenu">
+                  @for (lab of labOrders; track lab) {
+                    <button mat-menu-item type="button" (click)="addLabOrder(lab)">{{ lab }}</button>
+                  }
+                </mat-menu>
+              </div>
+            }
+
+            <mat-form-field appearance="outline" class="enc__full">
+              <mat-label>Orders (labs, imaging, referrals)</mat-label>
+              <textarea matInput formControlName="ordersNotes" rows="3"></textarea>
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="enc__full">
+              <mat-label>Patient education & instructions</mat-label>
+              <textarea matInput formControlName="patientInstructions" rows="3"></textarea>
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="enc__full">
+              <mat-label>Follow-up</mat-label>
+              <input matInput formControlName="followUpInstructions" />
+            </mat-form-field>
+          </mat-expansion-panel>
+        </mat-accordion>
+      </form>
+
+      @if (enc.addenda.length || !editable()) {
+        <section class="enc__addenda" aria-label="Addenda">
+          <div class="enc__addenda-header">
+            <h3>Addenda</h3>
+            @if (!editable() && isPhysician()) {
+              <button mat-stroked-button type="button" (click)="openAddendumDialog()">
+                <mat-icon>note_add</mat-icon> Add addendum
+              </button>
+            }
+          </div>
+          @for (a of enc.addenda; track a.addedAt) {
+            <article class="enc__addendum">
+              <header>{{ a.addedByName ?? 'Provider' }} · {{ a.addedAt | date:'MMM d, y · h:mm a' }}</header>
+              <p>{{ a.content }}</p>
+            </article>
+          } @empty {
+            <p class="enc__empty">No addenda.</p>
+          }
+        </section>
+      }
+
+      @if (editable()) {
+        <footer class="enc__footer">
+          <button mat-stroked-button type="button" [disabled]="busy()" (click)="saveDraft()">Save as draft</button>
+          <button mat-button type="button" class="enc__danger" [disabled]="busy()" (click)="discard()">Discard encounter</button>
+          <span class="enc__spacer"></span>
+          <div class="enc__provider">
+            <span>Authorized provider</span>
+            <strong>{{ enc.providerName }}</strong>
+          </div>
+          <span [matTooltip]="!isPhysician() ? 'Only physicians can sign notes.' : blockers().join(' ')"
+                [matTooltipDisabled]="isPhysician() && blockers().length === 0">
+            <button mat-flat-button color="primary" type="button" class="enc__sign"
+                    [disabled]="busy() || !isPhysician() || blockers().length > 0" (click)="sign()">
+              <mat-icon>draw</mat-icon> Sign and complete
+            </button>
+          </span>
+        </footer>
+      }
+    </section>
+  </div>
+}
