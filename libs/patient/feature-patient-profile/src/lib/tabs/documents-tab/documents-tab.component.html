@@ -1,0 +1,79 @@
+@if (patient(); as p) {
+  <div class="doc">
+
+    <div class="doc__header">
+      <div>
+        <h2 class="doc__title">Documents</h2>
+        <p class="doc__subtitle">{{ p.documents.length }} file(s)</p>
+      </div>
+      <button mat-flat-button [disabled]="uploading()" class="doc__upload-btn">
+        @if (uploading()) {
+          <mat-spinner diameter="18" />
+        } @else {
+          <ng-container><mat-icon>upload</mat-icon> Upload</ng-container>
+          <input type="file" class="doc__file-input"
+                 accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
+                 (change)="onFileSelected($event)">
+        }
+      </button>
+    </div>
+
+    <!-- Category Filter -->
+    @if (p.documents.length > 0) {
+      <mat-chip-listbox [value]="categoryFilter()" (change)="categoryFilter.set($event.value)" class="doc__filter">
+        <mat-chip-option value="">All</mat-chip-option>
+        @for (cat of availableCategories(); track cat) {
+          <mat-chip-option [value]="cat">{{ cat | titlecase }}</mat-chip-option>
+        }
+      </mat-chip-listbox>
+    }
+
+    @if (uploadError()) {
+      <div class="doc__error">
+        <mat-icon>error_outline</mat-icon>{{ uploadError() }}
+      </div>
+    }
+
+    <!-- Document Grid -->
+    @if (filteredDocs().length === 0) {
+      <div class="doc__empty">
+        <mat-icon class="doc__empty-icon">folder_open</mat-icon>
+        <p>No documents uploaded yet.</p>
+        <p class="doc__hint">Supported formats: PDF, JPG, PNG.</p>
+        <button mat-stroked-button class="doc__upload-btn">
+          <mat-icon>upload</mat-icon> Upload first document
+          <input type="file" class="doc__file-input"
+                 accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
+                 (change)="onFileSelected($event)">
+        </button>
+      </div>
+    } @else {
+      <div class="doc__grid">
+        @for (d of filteredDocs(); track d.id) {
+          <div class="doc__card mat-elevation-z1">
+            <div class="doc__card-icon">
+              <mat-icon>{{ iconFor(d.category) }}</mat-icon>
+            </div>
+            <div class="doc__card-body">
+              <div class="doc__card-name" [matTooltip]="d.name">{{ d.name }}</div>
+              <div class="doc__card-meta">
+                <span class="doc__tag">{{ d.category }}</span>
+                <span>{{ formatSize(d.sizeBytes) }}</span>
+                <span>{{ d.uploadedAt | date:'mediumDate' }}</span>
+              </div>
+            </div>
+            <button mat-icon-button class="doc__card-more" [matMenuTriggerFor]="docMenu">
+              <mat-icon>more_vert</mat-icon>
+            </button>
+            <mat-menu #docMenu>
+              <button mat-menu-item (click)="removeDocument(p.id, d.id)">
+                <mat-icon>delete_outline</mat-icon> Remove
+              </button>
+            </mat-menu>
+          </div>
+        }
+      </div>
+    }
+
+  </div>
+}

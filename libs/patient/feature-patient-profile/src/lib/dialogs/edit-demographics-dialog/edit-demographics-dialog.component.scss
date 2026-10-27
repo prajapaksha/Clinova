@@ -1,0 +1,26 @@
+.ed {
+  &__error {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: #fef2f2;
+    border-radius: 6px;
+    color: #dc2626;
+    margin-bottom: 12px;
+    font-size: 0.875rem;
+  }
+
+  &__form {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding-top: 8px;
+    min-width: min(600px, 88vw);
+  }
+
+  &__row { display: flex; gap: 12px; flex-wrap: wrap; }
+  &__field { flex: 1; min-width: 140px; }
+  &__field--sm { flex: 0 0 140px; }
+  &__field--xs { flex: 0 0 100px; }
+}

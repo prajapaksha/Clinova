@@ -1,0 +1,24 @@
+.bad__field { width: 100%; margin-bottom: 4px; }
+
+.bad__row { display: flex; gap: 12px; align-items: flex-start; }
+.bad__field--date { flex: 2; }
+.bad__field--time { flex: 2; }
+.bad__field--dur  { flex: 1; }
+
+.bad__end-time {
+  font-size: 0.8125rem;
+  color: var(--mat-sys-on-surface-variant, #6b7280);
+  margin: -8px 0 12px;
+}
+
+.bad__error {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #fef2f2;
+  color: #dc2626;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 0.875rem;
+  margin-top: 4px;
+}

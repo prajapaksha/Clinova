@@ -1,0 +1,16 @@
+@if (patient(); as p) {
+  <div class="notes">
+    <div class="notes__header">
+      <h2 class="notes__title">Clinical Notes</h2>
+      <button mat-stroked-button routerLink="/encounters/new" [queryParams]="{ patientId: p.id }">
+        <mat-icon>add</mat-icon> New Encounter
+      </button>
+    </div>
+
+    <div class="notes__empty">
+      <mat-icon class="notes__empty-icon">clinical_notes</mat-icon>
+      <p>No clinical notes on record.</p>
+      <p class="notes__hint">Encounter notes written by providers will appear here once the clinical module is connected.</p>
+    </div>
+  </div>
+}

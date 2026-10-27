@@ -1,0 +1,94 @@
+<h2 mat-dialog-title>Book Appointment</h2>
+
+<mat-dialog-content>
+  <!-- Patient Search -->
+  <mat-form-field class="bad__field">
+    <mat-label>Patient</mat-label>
+    <input matInput
+           [value]="patientSearch()"
+           (input)="onPatientInput($event)"
+           [matAutocomplete]="patientAuto"
+           placeholder="Search by name or MRN…" />
+    <mat-autocomplete #patientAuto (optionSelected)="onPatientSelected($any($event.option.value))">
+      @if (searchingPatients()) {
+        <mat-option disabled>
+          <mat-spinner diameter="16" style="display:inline-block;margin-right:8px" />
+          Searching…
+        </mat-option>
+      }
+      @for (p of patientResults(); track p.id) {
+        <mat-option [value]="p">
+          {{ p.firstName }} {{ p.lastName }}
+          <span style="color:#9ca3af;font-size:.75rem;margin-left:8px">{{ p.mrn }}</span>
+        </mat-option>
+      }
+    </mat-autocomplete>
+    @if (selectedPatient()) {
+      <mat-icon matSuffix style="color:#388e3c">check_circle</mat-icon>
+    }
+  </mat-form-field>
+
+  <!-- Provider -->
+  <mat-form-field class="bad__field">
+    <mat-label>Provider</mat-label>
+    <mat-select [(ngModel)]="selectedProviderId">
+      @for (p of providers(); track p.id) {
+        <mat-option [value]="p.id">Dr. {{ p.firstName }} {{ p.lastName }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+
+  <!-- Appointment Type -->
+  <mat-form-field class="bad__field">
+    <mat-label>Type</mat-label>
+    <mat-select [(ngModel)]="selectedTypeId" (ngModelChange)="onTypeChange($event)">
+      @for (t of appointmentTypes(); track t.id) {
+        <mat-option [value]="t.id">{{ t.name }} ({{ t.defaultDurationMinutes }} min)</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+
+  <!-- Date + Time row -->
+  <div class="bad__row">
+    <mat-form-field class="bad__field bad__field--date">
+      <mat-label>Date</mat-label>
+      <input matInput type="date" [(ngModel)]="selectedDate" />
+    </mat-form-field>
+
+    <mat-form-field class="bad__field bad__field--time">
+      <mat-label>Start Time</mat-label>
+      <mat-select [(ngModel)]="selectedTimeSlot">
+        @for (s of timeSlots; track s.label) {
+          <mat-option [value]="s">{{ s.label }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field class="bad__field bad__field--dur">
+      <mat-label>Duration (min)</mat-label>
+      <input matInput type="number" [(ngModel)]="duration" min="5" max="240" step="5" />
+    </mat-form-field>
+  </div>
+
+  <!-- End time preview -->
+  <p class="bad__end-time">
+    End time: <strong>{{ endTimeLabel() }}</strong>
+  </p>
+
+  <!-- Reason -->
+  <mat-form-field class="bad__field">
+    <mat-label>Reason for visit</mat-label>
+    <textarea matInput [(ngModel)]="reasonForVisit" rows="2" placeholder="Optional…"></textarea>
+  </mat-form-field>
+
+  @if (error()) {
+    <div class="bad__error"><mat-icon>error_outline</mat-icon> {{ error() }}</div>
+  }
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button [mat-dialog-close]="null">Cancel</button>
+  <button mat-flat-button [disabled]="!canBook() || saving()" (click)="book()">
+    @if (saving()) { <mat-spinner diameter="18" /> } @else { Book }
+  </button>
+</mat-dialog-actions>

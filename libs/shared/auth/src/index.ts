@@ -1,1 +1,2 @@
-export * from './lib/auth/auth';
+export { AuthService } from './lib/auth/auth';
+export type { StaffUser } from './lib/auth/auth';

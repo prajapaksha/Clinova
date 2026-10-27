@@ -1,0 +1,162 @@
+@if (patient(); as p) {
+  <div class="med">
+
+    <!-- Vitals Strip -->
+    <div class="med__vitals">
+      <div class="med__vital">
+        <span class="med__vital-label">Blood Type</span>
+        <strong class="med__vital-value">{{ p.bloodType }}</strong>
+      </div>
+      @if (p.heightCm) {
+        <div class="med__vital">
+          <span class="med__vital-label">Height</span>
+          <strong class="med__vital-value">{{ p.heightCm }} cm</strong>
+        </div>
+      }
+      @if (p.weightKg) {
+        <div class="med__vital">
+          <span class="med__vital-label">Weight</span>
+          <strong class="med__vital-value">{{ p.weightKg }} kg</strong>
+        </div>
+      }
+    </div>
+
+    <!-- Allergies -->
+    <mat-card class="med__card">
+      <mat-card-header>
+        <mat-card-title class="med__card-title med__card-title--warn">
+          <mat-icon>warning</mat-icon>Allergies
+          <span class="med__count">{{ p.allergies.length }} recorded</span>
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        @if (p.allergies.length === 0) {
+          <p class="med__empty">No allergies recorded.</p>
+        } @else {
+          <div class="med__allergy-list">
+            @for (a of p.allergies; track a.id) {
+              <div class="med__allergy" [attr.data-severity]="a.severity">
+                <div class="med__allergy-top">
+                  <strong>{{ a.allergen }}</strong>
+                  <span class="med__severity" [attr.data-severity]="a.severity">{{ a.severity }}</span>
+                  <button mat-icon-button class="med__allergy-del"
+                          matTooltip="Remove allergy"
+                          (click)="removeAllergy(p.id, a.id)">
+                    <mat-icon>delete_outline</mat-icon>
+                  </button>
+                </div>
+                <div class="med__allergy-meta">
+                  <span class="med__tag">{{ a.type }}</span>
+                  <span>Reaction: {{ a.reaction }}</span>
+                  @if (a.notes) { <span class="med__notes">{{ a.notes }}</span> }
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </mat-card-content>
+      <mat-card-actions>
+        <button mat-button (click)="openAddAllergy(p.id)">
+          <mat-icon>add</mat-icon> Add Allergy
+        </button>
+      </mat-card-actions>
+    </mat-card>
+
+    <!-- Chronic Conditions -->
+    <mat-card class="med__card">
+      <mat-card-header>
+        <mat-card-title class="med__card-title"><mat-icon>monitor_heart</mat-icon>Chronic Conditions</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        @if (p.chronicConditions.length === 0) {
+          <p class="med__empty">None recorded.</p>
+        } @else {
+          <mat-chip-set>
+            @for (c of p.chronicConditions; track c) {
+              <mat-chip>{{ c }}</mat-chip>
+            }
+          </mat-chip-set>
+        }
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Current Medications -->
+    <mat-card class="med__card">
+      <mat-card-header>
+        <mat-card-title class="med__card-title"><mat-icon>medication</mat-icon>Current Medications</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        @if (p.currentMedications.length === 0) {
+          <p class="med__empty">None recorded.</p>
+        } @else {
+          <mat-list>
+            @for (m of p.currentMedications; track m) {
+              <mat-list-item>
+                <mat-icon matListItemIcon>pill</mat-icon>
+                <span matListItemTitle>{{ m }}</span>
+              </mat-list-item>
+            }
+          </mat-list>
+        }
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Past Surgeries -->
+    <mat-card class="med__card">
+      <mat-card-header>
+        <mat-card-title class="med__card-title"><mat-icon>healing</mat-icon>Past Surgeries</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        @if (p.pastSurgeries.length === 0) {
+          <p class="med__empty">None recorded.</p>
+        } @else {
+          <mat-list>
+            @for (s of p.pastSurgeries; track s) {
+              <mat-list-item><span matListItemTitle>{{ s }}</span></mat-list-item>
+            }
+          </mat-list>
+        }
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Family History -->
+    <mat-card class="med__card">
+      <mat-card-header>
+        <mat-card-title class="med__card-title"><mat-icon>family_restroom</mat-icon>Family History</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        @if (p.familyHistory.length === 0) {
+          <p class="med__empty">None recorded.</p>
+        } @else {
+          <mat-chip-set>
+            @for (f of p.familyHistory; track f) {
+              <mat-chip>{{ f }}</mat-chip>
+            }
+          </mat-chip-set>
+        }
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Immunizations -->
+    <mat-card class="med__card">
+      <mat-card-header>
+        <mat-card-title class="med__card-title"><mat-icon>vaccines</mat-icon>Immunization Log</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        @if (p.immunizationLog.length === 0) {
+          <p class="med__empty">No immunizations recorded.</p>
+        } @else {
+          <mat-list>
+            @for (imm of p.immunizationLog; track imm) {
+              <mat-list-item>
+                <mat-icon matListItemIcon>check_circle</mat-icon>
+                <span matListItemTitle>{{ imm }}</span>
+              </mat-list-item>
+            }
+          </mat-list>
+        }
+      </mat-card-content>
+    </mat-card>
+
+  </div>
+}

@@ -1,7 +1,8 @@
-import { ApplicationConfig, provideBrowserGlobalErrorListeners, provideZonelessChangeDetection } from '@angular/core';
+import { ApplicationConfig, inject, provideAppInitializer, provideBrowserGlobalErrorListeners, provideZonelessChangeDetection } from '@angular/core';
 import { provideRouter, withComponentInputBinding, withViewTransitions } from '@angular/router';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
+import { AuthService } from '@clinova/auth';
 import { authInterceptor } from './core/auth/auth.interceptor';
 import { appRoutes } from './app.routes';
 
@@ -12,5 +13,6 @@ export const appConfig: ApplicationConfig = {
     provideRouter(appRoutes, withComponentInputBinding(), withViewTransitions()),
     provideAnimationsAsync(),
     provideHttpClient(withFetch(), withInterceptors([authInterceptor])),
+    provideAppInitializer(() => inject(AuthService).restoreSession()),
   ],
 };

@@ -1,0 +1,28 @@
+.notes {
+  padding: 24px;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+  }
+
+  &__title { font-size: 1rem; font-weight: 600; margin: 0; }
+
+  &__empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 48px 24px;
+    border: 1px dashed var(--mat-sys-outline, #d1d5db);
+    border-radius: 8px;
+    text-align: center;
+    color: var(--mat-sys-on-surface-variant, #9ca3af);
+  }
+
+  &__empty-icon { font-size: 48px !important; width: 48px; height: 48px; opacity: 0.3; }
+
+  &__hint { font-size: 0.875rem; max-width: 360px; }
+}

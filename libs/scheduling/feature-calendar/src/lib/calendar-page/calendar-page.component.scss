@@ -1,0 +1,317 @@
+:host { display: flex; flex-direction: column; height: 100%; overflow: hidden; }
+
+$start-hour: 7;
+$end-hour: 19;
+$hour-px: 64px;
+$grid-height: #{($end-hour - $start-hour) * 64}px;
+
+.cal {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  background: var(--mat-sys-surface, #fafafa);
+
+  // ── Toolbar ────────────────────────────────────────────────────────────
+  &__toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 16px;
+    background: white;
+    border-bottom: 1px solid var(--mat-sys-outline-variant, #e5e7eb);
+    flex-shrink: 0;
+    gap: 12px;
+  }
+
+  &__nav { display: flex; align-items: center; gap: 4px; }
+
+  &__week-label {
+    font-size: 1rem;
+    font-weight: 500;
+    margin-left: 8px;
+    white-space: nowrap;
+  }
+
+  &__toolbar-right { display: flex; align-items: center; gap: 12px; }
+
+  &__provider-select { width: 200px; }
+
+  // ── Layout ─────────────────────────────────────────────────────────────
+  &__layout { display: flex; flex: 1; overflow: hidden; }
+
+  &__grid-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+  // ── Day headers ────────────────────────────────────────────────────────
+  &__header-row {
+    display: grid;
+    grid-template-columns: 56px repeat(7, 1fr);
+    border-bottom: 1px solid var(--mat-sys-outline-variant, #e5e7eb);
+    background: white;
+    flex-shrink: 0;
+  }
+
+  &__gutter { /* empty left cell */ }
+
+  &__day-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 8px 4px;
+    gap: 2px;
+
+    &--today { background: var(--mat-sys-primary-container, #e0f2f1); }
+  }
+
+  &__dow {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--mat-sys-on-surface-variant, #6b7280);
+  }
+
+  &__dom {
+    font-size: 1.125rem;
+    font-weight: 400;
+    line-height: 1;
+
+    &--today {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--mat-sys-primary, #00796b);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+    }
+  }
+
+  &__today-dot {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--mat-sys-primary, #00796b);
+  }
+
+  // ── Grid scroll ────────────────────────────────────────────────────────
+  &__grid-scroll { flex: 1; overflow-y: auto; overflow-x: hidden; position: relative; }
+
+  &__loader {
+    position: absolute;
+    top: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+  }
+
+  &__grid {
+    display: grid;
+    grid-template-columns: 56px repeat(7, 1fr);
+    min-height: $grid-height;
+  }
+
+  // ── Gutter (time labels) ───────────────────────────────────────────────
+  &__gutter-col {
+    border-right: 1px solid var(--mat-sys-outline-variant, #e5e7eb);
+    background: white;
+    position: sticky;
+    left: 0;
+    z-index: 2;
+  }
+
+  &__hour-label {
+    height: 64px;
+    padding: 4px 6px 0;
+    font-size: 0.6875rem;
+    color: var(--mat-sys-on-surface-variant, #9ca3af);
+    text-align: right;
+    border-top: 1px solid var(--mat-sys-outline-variant, #e5e7eb);
+    line-height: 1;
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-end;
+  }
+
+  // ── Day columns ────────────────────────────────────────────────────────
+  &__day-col {
+    position: relative;
+    height: $grid-height;
+    border-right: 1px solid var(--mat-sys-outline-variant, #e5e7eb);
+    cursor: pointer;
+
+    &--today { background: rgba(0, 121, 107, 0.03); }
+    &:hover { background: rgba(0, 0, 0, 0.02); }
+  }
+
+  &__hour-line {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: var(--mat-sys-outline-variant, #e5e7eb);
+    pointer-events: none;
+  }
+
+  &__half-line {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: var(--mat-sys-outline-variant, #f3f4f6);
+    border-top: 1px dashed var(--mat-sys-outline-variant, #e5e7eb);
+    pointer-events: none;
+  }
+
+  // ── Now indicator ──────────────────────────────────────────────────────
+  &__now-line {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: #ef4444;
+    pointer-events: none;
+    z-index: 3;
+  }
+
+  &__now-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #ef4444;
+    position: absolute;
+    left: -4px;
+    top: -3px;
+  }
+
+  // ── Appointment cards ──────────────────────────────────────────────────
+  &__appt {
+    position: absolute;
+    left: 2px;
+    right: 2px;
+    border-radius: 4px;
+    background: white;
+    border-left: 3px solid var(--mat-sys-primary, #00796b);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+    padding: 2px 4px;
+    cursor: pointer;
+    overflow: hidden;
+    z-index: 1;
+    transition: box-shadow 0.15s;
+
+    &:hover { box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18); }
+
+    &--selected {
+      box-shadow: 0 0 0 2px var(--mat-sys-primary, #00796b), 0 2px 8px rgba(0, 0, 0, 0.18);
+    }
+  }
+
+  &__appt-name {
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.3;
+  }
+
+  &__appt-type {
+    font-size: 0.6875rem;
+    color: var(--mat-sys-on-surface-variant, #6b7280);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__appt-time { font-size: 0.6875rem; color: var(--mat-sys-on-surface-variant, #9ca3af); }
+
+  // ── Detail panel ───────────────────────────────────────────────────────
+  &__detail {
+    width: 300px;
+    flex-shrink: 0;
+    border-left: 1px solid var(--mat-sys-outline-variant, #e5e7eb);
+    background: white;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+
+  &__detail-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px 8px;
+    border-bottom: 1px solid var(--mat-sys-outline-variant, #e5e7eb);
+  }
+
+  &__detail-title { font-weight: 600; font-size: 1rem; }
+
+  &__detail-status {
+    margin: 12px 16px;
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    background: #e5e7eb;
+    color: #374151;
+
+    &[data-status="CONFIRMED"]  { background: #dbeafe; color: #1e40af; }
+    &[data-status="CHECKED_IN"] { background: #fef3c7; color: #92400e; }
+    &[data-status="IN_PROGRESS"]{ background: #ede9fe; color: #5b21b6; }
+    &[data-status="COMPLETED"]  { background: #d1fae5; color: #065f46; }
+    &[data-status="CANCELLED"]  { background: #f3f4f6; color: #6b7280; }
+    &[data-status="NO_SHOW"]    { background: #fee2e2; color: #991b1b; }
+    &[data-status="RESCHEDULED"]{ background: #ffedd5; color: #9a3412; }
+  }
+
+  &__detail-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 8px 16px;
+    font-size: 0.875rem;
+
+    mat-icon {
+      font-size: 1.125rem;
+      width: 1.125rem;
+      height: 1.125rem;
+      color: var(--mat-sys-on-surface-variant, #6b7280);
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    > div { flex: 1; }
+
+    a[mat-icon-button] {
+      flex-shrink: 0;
+      width: 28px;
+      height: 28px;
+      line-height: 28px;
+      mat-icon { font-size: 0.875rem; width: 0.875rem; height: 0.875rem; }
+    }
+  }
+
+  &__detail-sub {
+    font-size: 0.75rem;
+    color: var(--mat-sys-on-surface-variant, #6b7280);
+    margin-top: 1px;
+  }
+
+  &__detail-actions {
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: auto;
+    border-top: 1px solid var(--mat-sys-outline-variant, #e5e7eb);
+
+    button { justify-content: flex-start; }
+  }
+
+  &__btn-danger { color: var(--mat-sys-error, #dc2626) !important; }
+}

@@ -62,3 +62,6 @@ vitest.config.*.timestamp*
 *.db
 *.db-shm
 *.db-wal
+
+# Local credentials
+docs/credentials.txt

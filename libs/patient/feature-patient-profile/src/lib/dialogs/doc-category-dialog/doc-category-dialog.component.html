@@ -1,0 +1,19 @@
+<h2 mat-dialog-title>Select Document Category</h2>
+<mat-dialog-content>
+  <p class="dcd__hint">Choose the category for <strong>{{ data.fileName }}</strong></p>
+  <div class="dcd__grid">
+    @for (opt of categories; track opt.value) {
+      <button mat-stroked-button
+              class="dcd__cat"
+              [class.dcd__cat--active]="selected() === opt.value"
+              (click)="selected.set(opt.value)">
+        <mat-icon>{{ opt.icon }}</mat-icon>
+        <span>{{ opt.label }}</span>
+      </button>
+    }
+  </div>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button [mat-dialog-close]="null">Cancel</button>
+  <button mat-flat-button [mat-dialog-close]="selected()">Upload</button>
+</mat-dialog-actions>

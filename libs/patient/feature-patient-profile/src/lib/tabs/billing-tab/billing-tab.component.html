@@ -1,0 +1,63 @@
+@if (patient(); as p) {
+  <div class="bil">
+
+    <!-- Balance Summary -->
+    <div class="bil__summary-row">
+      <mat-card class="bil__kpi-card">
+        <mat-card-content>
+          <div class="bil__kpi-label">Current Balance</div>
+          <div class="bil__kpi-value">$0.00</div>
+        </mat-card-content>
+      </mat-card>
+      <mat-card class="bil__kpi-card bil__kpi-card--warn">
+        <mat-card-content>
+          <div class="bil__kpi-label">Overdue</div>
+          <div class="bil__kpi-value">$0.00</div>
+        </mat-card-content>
+      </mat-card>
+      <mat-card class="bil__kpi-card">
+        <mat-card-content>
+          <div class="bil__kpi-label">Last Payment</div>
+          <div class="bil__kpi-value">—</div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <!-- Insurance -->
+    @if (p.insurancePolicies.length) {
+      <mat-card class="bil__card">
+        <mat-card-header>
+          <mat-card-title class="bil__card-title">
+            <mat-icon>health_and_safety</mat-icon>Insurance on File
+          </mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          @for (ins of p.insurancePolicies; track ins.id) {
+            <div class="bil__ins-row">
+              <div>
+                <strong>{{ ins.provider }}</strong>
+                <span class="bil__badge">{{ ins.isPrimary ? 'Primary' : 'Secondary' }}</span>
+              </div>
+              <div class="bil__ins-meta">Policy {{ ins.policyNumber }}</div>
+            </div>
+          }
+        </mat-card-content>
+      </mat-card>
+    }
+
+    <!-- Invoices -->
+    <div class="bil__inv-header">
+      <h2 class="bil__section-title">Invoices</h2>
+      <button mat-stroked-button>
+        <mat-icon>add</mat-icon> New Invoice
+      </button>
+    </div>
+
+    <div class="bil__empty">
+      <mat-icon class="bil__empty-icon">receipt_long</mat-icon>
+      <p>No invoices on record.</p>
+      <p class="bil__hint">Billing data will appear once the billing module is connected.</p>
+    </div>
+
+  </div>
+}

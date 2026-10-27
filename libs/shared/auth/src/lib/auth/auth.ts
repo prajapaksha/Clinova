@@ -1,9 +1,61 @@
-import { Component } from '@angular/core';
+import { computed, inject, Injectable, signal } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Router } from '@angular/router';
+import { catchError, map, Observable, of, tap } from 'rxjs';
 
-@Component({
-  selector: 'lib-auth',
-  imports: [],
-  templateUrl: './auth.html',
-  styleUrl: './auth.css',
-})
-export class Auth {}
+export interface StaffUser {
+  id: string;
+  email: string;
+  role: string;
+  firstName: string;
+  lastName: string;
+}
+
+const TOKEN_KEY = 'clv_access_token';
+
+@Injectable({ providedIn: 'root' })
+export class AuthService {
+  private readonly http = inject(HttpClient);
+  private readonly router = inject(Router);
+
+  private readonly _user = signal<StaffUser | null>(null);
+  readonly currentUser = this._user.asReadonly();
+  readonly isAuthenticated = computed(() => this._user() !== null);
+
+  // Call from an app initializer, not the constructor: the HTTP interceptor injects
+  // AuthService, so a request during construction hits a circular-DI error.
+  restoreSession(): Observable<StaffUser | null> {
+    if (!this.getToken()) return of(null);
+    return this.http.get<StaffUser>('/api/auth/me').pipe(
+      tap(user => this._user.set(user)),
+      map(user => user as StaffUser | null),
+      catchError(() => {
+        this.clearSession();
+        return of(null);
+      }),
+    );
+  }
+
+  login(email: string, password: string) {
+    return this.http.post<{ accessToken: string; user: StaffUser }>('/api/auth/login', { email, password }).pipe(
+      tap(({ accessToken, user }) => {
+        localStorage.setItem(TOKEN_KEY, accessToken);
+        this._user.set(user);
+      }),
+    );
+  }
+
+  logout(): void {
+    this.clearSession();
+    this.router.navigate(['/auth/login']);
+  }
+
+  getToken(): string | null {
+    return localStorage.getItem(TOKEN_KEY);
+  }
+
+  private clearSession(): void {
+    localStorage.removeItem(TOKEN_KEY);
+    this._user.set(null);
+  }
+}

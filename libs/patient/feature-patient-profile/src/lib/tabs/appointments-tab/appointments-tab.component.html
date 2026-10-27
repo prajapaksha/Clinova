@@ -1,0 +1,91 @@
+@if (patient(); as p) {
+  <div class="apt">
+
+    <div class="apt__header">
+      <h2 class="apt__section-title">Appointments</h2>
+      <button mat-stroked-button (click)="openBookDialog()">
+        <mat-icon>add</mat-icon> Book Appointment
+      </button>
+    </div>
+
+    @if (store.loading()) {
+      <div class="apt__loading"><mat-spinner diameter="28" /></div>
+    }
+
+    <!-- Upcoming -->
+    <h3 class="apt__group-title">Upcoming</h3>
+    @if (upcoming().length === 0 && !store.loading()) {
+      <div class="apt__empty">
+        <mat-icon class="apt__empty-icon">calendar_today</mat-icon>
+        <p>No upcoming appointments.</p>
+      </div>
+    } @else {
+      @for (appt of upcoming(); track appt.id) {
+        <div class="apt__card" [attr.data-status]="appt.status">
+          <div class="apt__card-left">
+            <div class="apt__date">
+              <span class="apt__day">{{ appt.slot.start | date:'d' }}</span>
+              <span class="apt__month">{{ appt.slot.start | date:'MMM' }}</span>
+            </div>
+          </div>
+          <div class="apt__card-body">
+            <div class="apt__card-top">
+              <strong>{{ appt.typeName }}</strong>
+              <span class="apt__status" [attr.data-status]="appt.status">
+                {{ appt.status | titlecase }}
+              </span>
+            </div>
+            <div class="apt__card-meta">
+              <mat-icon>schedule</mat-icon>
+              {{ appt.slot.start | date:'h:mm a' }} – {{ appt.slot.end | date:'h:mm a' }}
+            </div>
+            <div class="apt__card-meta">
+              <mat-icon>badge</mat-icon>
+              {{ appt.providerName }}
+            </div>
+            @if (appt.reasonForVisit) {
+              <div class="apt__card-meta apt__card-reason">{{ appt.reasonForVisit }}</div>
+            }
+          </div>
+        </div>
+      }
+    }
+
+    <!-- Past -->
+    <h3 class="apt__group-title apt__group-title--past">Past</h3>
+    @if (past().length === 0 && !store.loading()) {
+      <div class="apt__empty">
+        <mat-icon class="apt__empty-icon">history</mat-icon>
+        <p>No past appointments.</p>
+      </div>
+    } @else {
+      @for (appt of past(); track appt.id) {
+        <div class="apt__card apt__card--past" [attr.data-status]="appt.status">
+          <div class="apt__card-left">
+            <div class="apt__date">
+              <span class="apt__day">{{ appt.slot.start | date:'d' }}</span>
+              <span class="apt__month">{{ appt.slot.start | date:'MMM' }}</span>
+            </div>
+          </div>
+          <div class="apt__card-body">
+            <div class="apt__card-top">
+              <strong>{{ appt.typeName }}</strong>
+              <span class="apt__status" [attr.data-status]="appt.status">
+                {{ appt.status | titlecase }}
+              </span>
+            </div>
+            <div class="apt__card-meta">
+              <mat-icon>schedule</mat-icon>
+              {{ appt.slot.start | date:'h:mm a' }}
+            </div>
+            <div class="apt__card-meta">
+              <mat-icon>badge</mat-icon>
+              {{ appt.providerName }}
+            </div>
+          </div>
+        </div>
+      }
+    }
+
+  </div>
+}

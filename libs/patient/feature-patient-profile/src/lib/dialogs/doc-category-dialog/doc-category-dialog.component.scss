@@ -1,0 +1,35 @@
+.dcd__hint {
+  margin: 0 0 16px;
+  font-size: 0.875rem;
+  color: var(--mat-sys-on-surface-variant, #555);
+}
+
+.dcd__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 8px;
+  padding-bottom: 8px;
+}
+
+.dcd__cat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 8px;
+  height: auto;
+
+  mat-icon {
+    font-size: 1.5rem;
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+
+  span { font-size: 0.8125rem; }
+}
+
+.dcd__cat--active {
+  background: var(--mat-sys-primary-container, #e8f5e9) !important;
+  border-color: var(--mat-sys-primary, #00796b) !important;
+  color: var(--mat-sys-primary, #00796b);
+}

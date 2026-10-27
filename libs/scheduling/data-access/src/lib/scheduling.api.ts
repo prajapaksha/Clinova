@@ -42,7 +42,7 @@ function mapAppointment(a: Record<string, any>): Appointment {
     updatedAt: new Date(a['updatedAt']),
     checkedInAt: a['checkedInAt'] ? new Date(a['checkedInAt']) : null,
     completedAt: a['completedAt'] ? new Date(a['completedAt']) : null,
-  } as Appointment;
+  } as unknown as Appointment;
 }
 
 function toHttpParams(filters: AppointmentFilters): HttpParams {

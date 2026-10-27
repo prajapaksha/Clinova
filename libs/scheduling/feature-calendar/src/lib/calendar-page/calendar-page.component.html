@@ -1,0 +1,214 @@
+<div class="cal">
+
+  <!-- Toolbar -->
+  <div class="cal__toolbar">
+    <div class="cal__nav">
+      <button mat-icon-button matTooltip="Previous week" (click)="prevWeek()">
+        <mat-icon>chevron_left</mat-icon>
+      </button>
+      <button mat-button (click)="goToToday()">Today</button>
+      <button mat-icon-button matTooltip="Next week" (click)="nextWeek()">
+        <mat-icon>chevron_right</mat-icon>
+      </button>
+      <span class="cal__week-label">{{ weekLabel() }}</span>
+    </div>
+
+    <div class="cal__toolbar-right">
+      <mat-select [(ngModel)]="selectedProviderIdValue"
+                  class="cal__provider-select"
+                  placeholder="All providers">
+        <mat-option value="">All Providers</mat-option>
+        @for (p of store.providers(); track p.id) {
+          <mat-option [value]="p.id">Dr. {{ p.firstName }} {{ p.lastName }}</mat-option>
+        }
+      </mat-select>
+
+      <button mat-flat-button (click)="openBookDialog()">
+        <mat-icon>add</mat-icon> Book
+      </button>
+    </div>
+  </div>
+
+  <!-- Main layout -->
+  <div class="cal__layout">
+
+    <!-- Calendar grid -->
+    <div class="cal__grid-area">
+
+      <!-- Day headers -->
+      <div class="cal__header-row">
+        <div class="cal__gutter"></div>
+        @for (day of weekDays(); track day.isoDate) {
+          <div class="cal__day-header" [class.cal__day-header--today]="day.isToday">
+            <span class="cal__dow">{{ day.dayName }}</span>
+            <span class="cal__dom" [class.cal__dom--today]="day.isToday">
+              {{ day.dayNum }}
+            </span>
+            @if (day.isToday) { <span class="cal__today-dot"></span> }
+          </div>
+        }
+      </div>
+
+      <!-- Scrollable grid body -->
+      <div class="cal__grid-scroll">
+        @if (store.loading()) {
+          <div class="cal__loader"><mat-spinner diameter="28" /></div>
+        }
+
+        <div class="cal__grid">
+          <!-- Time labels column -->
+          <div class="cal__gutter-col">
+            @for (h of hours; track h) {
+              <div class="cal__hour-label">{{ formatHour(h) }}</div>
+            }
+          </div>
+
+          <!-- Day columns -->
+          @for (day of weekDays(); track day.isoDate) {
+            <div class="cal__day-col"
+                 [class.cal__day-col--today]="day.isToday"
+                 tabindex="0"
+                 role="button"
+                 [attr.aria-label]="'Book appointment on ' + (day.date | date:'fullDate')"
+                 (click)="onDayColClick(day.date, $event)"
+                 (keydown.enter)="openBookDialog(day.date)">
+
+              <!-- Hour + half-hour grid lines -->
+              @for (h of hours; track h) {
+                <div class="cal__hour-line"
+                     [style.top.px]="(h - startHour) * hourPx"></div>
+                <div class="cal__half-line"
+                     [style.top.px]="(h - startHour) * hourPx + hourPx / 2"></div>
+              }
+
+              <!-- "Now" indicator -->
+              @if (day.isToday && nowTop() >= 0) {
+                <div class="cal__now-line" [style.top.px]="nowTop()">
+                  <div class="cal__now-dot"></div>
+                </div>
+              }
+
+              <!-- Appointments -->
+              @for (appt of appointmentsForDay(day.date); track appt.id) {
+                <div class="cal__appt"
+                     [class.cal__appt--selected]="selectedAppt()?.id === appt.id"
+                     [style.top.px]="apptTop(appt)"
+                     [style.height.px]="apptHeight(appt)"
+                     [style.border-left-color]="apptColor(appt)"
+                     [matTooltip]="appt.patientName + ' · ' + appt.typeName"
+                     tabindex="0"
+                     role="button"
+                     [attr.aria-label]="appt.patientName + ', ' + appt.typeName + ' at ' + (appt.slot.start | date:'h:mm a')"
+                     (click)="$event.stopPropagation(); selectAppt(appt)"
+                     (keydown.enter)="$event.stopPropagation(); selectAppt(appt)"
+                     (keydown.space)="$event.preventDefault(); $event.stopPropagation(); selectAppt(appt)">
+                  <div class="cal__appt-name">{{ appt.patientName }}</div>
+                  @if (apptHeight(appt) > 32) {
+                    <div class="cal__appt-type">{{ appt.typeName }}</div>
+                  }
+                  @if (apptHeight(appt) > 48) {
+                    <div class="cal__appt-time">
+                      {{ appt.slot.start | date:'h:mm a' }}
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Detail panel -->
+    @if (selectedAppt(); as appt) {
+      <div class="cal__detail">
+        <div class="cal__detail-head">
+          <span class="cal__detail-title">Appointment</span>
+          <button mat-icon-button (click)="clearSelection()">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+
+        <div class="cal__detail-status" [attr.data-status]="appt.status">
+          {{ appt.status | titlecase }}
+        </div>
+
+        <div class="cal__detail-row">
+          <mat-icon>person</mat-icon>
+          <div>
+            <strong>{{ appt.patientName }}</strong>
+            <div class="cal__detail-sub">{{ appt.patientMrn }}</div>
+          </div>
+          <a mat-icon-button [routerLink]="['/patients', appt.patientId, 'appointments']"
+             matTooltip="Open patient profile">
+            <mat-icon>open_in_new</mat-icon>
+          </a>
+        </div>
+
+        <div class="cal__detail-row">
+          <mat-icon>schedule</mat-icon>
+          <div>
+            <div>{{ appt.slot.start | date:'EEEE, MMMM d' }}</div>
+            <div class="cal__detail-sub">
+              {{ appt.slot.start | date:'h:mm a' }} – {{ appt.slot.end | date:'h:mm a' }}
+            </div>
+          </div>
+        </div>
+
+        <div class="cal__detail-row">
+          <mat-icon>medical_services</mat-icon>
+          <div>{{ appt.typeName }}</div>
+        </div>
+
+        <div class="cal__detail-row">
+          <mat-icon>badge</mat-icon>
+          <div>{{ appt.providerName }}</div>
+        </div>
+
+        @if (appt.reasonForVisit) {
+          <div class="cal__detail-row">
+            <mat-icon>notes</mat-icon>
+            <div>{{ appt.reasonForVisit }}</div>
+          </div>
+        }
+
+        @if (appt.checkedInAt) {
+          <div class="cal__detail-row">
+            <mat-icon>how_to_reg</mat-icon>
+            <div class="cal__detail-sub">Checked in {{ appt.checkedInAt | date:'h:mm a' }}</div>
+          </div>
+        }
+
+        <!-- Actions -->
+        <div class="cal__detail-actions">
+          @if (appt.status === 'SCHEDULED' || appt.status === 'CONFIRMED') {
+            <button mat-flat-button (click)="checkIn(appt.id)">
+              <mat-icon>how_to_reg</mat-icon> Check In
+            </button>
+            <button mat-stroked-button (click)="markNoShow(appt.id)">
+              <mat-icon>person_off</mat-icon> No Show
+            </button>
+            <button mat-button class="cal__btn-danger" (click)="cancelAppt(appt.id)">
+              <mat-icon>cancel</mat-icon> Cancel
+            </button>
+          }
+          @if (appt.status === 'CHECKED_IN') {
+            <button mat-flat-button (click)="startAppt(appt.id)">
+              <mat-icon>play_arrow</mat-icon> Start
+            </button>
+            <button mat-button class="cal__btn-danger" (click)="cancelAppt(appt.id)">
+              <mat-icon>cancel</mat-icon> Cancel
+            </button>
+          }
+          @if (appt.status === 'IN_PROGRESS') {
+            <button mat-flat-button (click)="completeAppt(appt.id)">
+              <mat-icon>check_circle</mat-icon> Complete
+            </button>
+          }
+        </div>
+      </div>
+    }
+
+  </div>
+</div>

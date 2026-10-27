@@ -3,7 +3,7 @@ import { RouterModule } from '@angular/router';
 
 @Component({
   imports: [RouterModule],
-  selector: 'app-root',
+  selector: 'clv-root',
   template: '<router-outlet />',
 })
 export class App {}
