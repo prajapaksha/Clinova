@@ -4,8 +4,10 @@ import { DatePipe, TitleCasePipe } from '@angular/common';
 import { MatDialog } from '@angular/material/dialog';
 import { PatientApiService, PatientStore } from '@clinova/patient/data-access';
 import { Permissions } from '@clinova/auth';
-import type { PatientId, DocumentId } from '@clinova/patient/domain';
-import { DocumentCategory } from '@clinova/patient/domain';
+import type { PatientDocument, PatientId, DocumentId } from '@clinova/patient/domain';
+import { DocumentCategory, RESULT_DOCUMENT_CATEGORIES } from '@clinova/patient/domain';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { HttpErrorResponse } from '@angular/common/http';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatChipsModule } from '@angular/material/chips';
@@ -15,6 +17,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatMenuModule } from '@angular/material/menu';
 import { catchError, EMPTY, finalize, switchMap } from 'rxjs';
 import { DocCategoryDialog } from '../../dialogs/doc-category-dialog/doc-category-dialog.component';
+import { ShareDocumentDialog, ShareDocumentData } from '../../dialogs/share-document-dialog';
 
 const CATEGORY_ICONS: Record<string, string> = {
   CONSENT_FORM: 'gavel',
@@ -43,6 +46,7 @@ export class DocumentsTab {
   protected readonly perms = inject(Permissions);
   private readonly dialog = inject(MatDialog);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly snack = inject(MatSnackBar);
 
   protected readonly patient = computed(() => this.store.selectedPatient());
   protected readonly categoryFilter = signal('');
@@ -110,6 +114,48 @@ export class DocumentsTab {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => this.store.loadById(patientId as PatientId),
+      });
+  }
+
+  protected isResult(d: PatientDocument): boolean {
+    return RESULT_DOCUMENT_CATEGORIES.includes(d.category);
+  }
+
+  /** Physicians release results; other documents can be shared by staff who edit the chart. */
+  protected canShare(d: PatientDocument): boolean {
+    return this.isResult(d) ? this.perms.can('clinical:notes', 'full') : this.perms.can('patient:profiles', 'write');
+  }
+
+  protected openDocument(patientId: string, d: PatientDocument): void {
+    this.api.documentFile(patientId as PatientId, d.id).subscribe({
+      next: blob => {
+        const url = URL.createObjectURL(blob);
+        window.open(url, '_blank', 'noopener');
+        setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      },
+      error: () => this.snack.open('The file for this document is not available.', 'OK', { duration: 4000 }),
+    });
+  }
+
+  protected share(patientId: string, d: PatientDocument, shared: boolean): void {
+    const request = (note?: string) => this.api.shareDocument(patientId as PatientId, d.id, shared, note).subscribe({
+      next: () => {
+        this.snack.open(shared ? 'Now visible in the patient portal.' : 'Removed from the patient portal.', 'OK', { duration: 3000 });
+        this.store.loadById(patientId as PatientId);
+      },
+      error: (err: unknown) => {
+        const msg = err instanceof HttpErrorResponse ? err.error?.message : null;
+        this.snack.open(typeof msg === 'string' ? msg : 'Could not update sharing.', 'OK', { duration: 5000 });
+      },
+    });
+    if (!shared) {
+      request();
+      return;
+    }
+    this.dialog.open<ShareDocumentDialog, ShareDocumentData, { note: string }>(ShareDocumentDialog, { data: { name: d.name, isResult: this.isResult(d) } })
+      .afterClosed()
+      .subscribe(result => {
+        if (result) request(result.note);
       });
   }
 }

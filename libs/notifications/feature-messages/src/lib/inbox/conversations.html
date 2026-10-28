@@ -1,0 +1,61 @@
+<div class="cv">
+  <aside class="cv__list">
+    <div class="cv__filters">
+      <mat-button-toggle-group [value]="status()" (change)="status.set($event.value)" aria-label="Conversation status">
+        <mat-button-toggle value="OPEN">Open</mat-button-toggle>
+        <mat-button-toggle value="CLOSED">Closed</mat-button-toggle>
+        <mat-button-toggle value="ALL">All</mat-button-toggle>
+      </mat-button-toggle-group>
+      <mat-slide-toggle [checked]="unreadOnly()" (change)="unreadOnly.set($event.checked)">Unread</mat-slide-toggle>
+    </div>
+    <ul class="cv__items">
+      @for (t of threads(); track t.id) {
+        <li>
+          <button type="button" class="cv__item" [class.is-active]="selected() === t.id" [class.is-unread]="t.unread" (click)="select(t)">
+            <span class="cv__row"><strong>{{ t.patientName }}</strong><small>{{ t.lastMessageAt | date:'MMM d, h:mm a' }}</small></span>
+            <span class="cv__subject">@if (t.unread) { <span class="cv__dot" aria-label="Unread"></span> }{{ t.subject }}</span>
+            <span class="cv__preview">{{ t.lastAuthorType === 'STAFF' ? 'You: ' : '' }}{{ t.lastMessagePreview }}</span>
+            <span class="cv__tag">{{ labels[t.category] }}</span>
+          </button>
+        </li>
+      } @empty {
+        <li class="cv__empty">No conversations.</li>
+      }
+    </ul>
+  </aside>
+
+  <section class="cv__pane">
+    @if (error()) { <p class="cv__error" role="alert">{{ error() }}</p> }
+    @if (thread(); as t) {
+      <header class="cv__head">
+        <div>
+          <h2>{{ t.subject }}</h2>
+          <p>{{ t.patientName }} · {{ t.patientMrn }} · {{ labels[t.category] }}
+            · <a [routerLink]="['/patients', t.patientId]">Open chart</a></p>
+        </div>
+        @if (t.status === 'OPEN') {
+          <button mat-stroked-button type="button" (click)="setThreadStatus('CLOSED')"><mat-icon>task_alt</mat-icon> Mark resolved</button>
+        } @else {
+          <button mat-button type="button" (click)="setThreadStatus('OPEN')">Reopen</button>
+        }
+      </header>
+      <div class="cv__msgs">
+        @for (m of t.messages; track m.id) {
+          <div class="cv__msg" [class.cv__msg--staff]="m.authorType === 'STAFF'">
+            <div class="cv__meta">{{ m.authorName }} · {{ m.createdAt | date:'MMM d, h:mm a' }}</div>
+            <div class="cv__body">{{ m.body }}</div>
+          </div>
+        }
+      </div>
+      <form class="cv__reply" (ngSubmit)="send()">
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Reply to {{ t.patientName }}</mat-label>
+          <textarea matInput rows="3" name="reply" maxlength="5000" [(ngModel)]="reply"></textarea>
+        </mat-form-field>
+        <button mat-flat-button color="primary" [disabled]="busy() || !reply.trim()"><mat-icon>send</mat-icon> Send</button>
+      </form>
+    } @else {
+      <div class="cv__placeholder"><mat-icon>forum</mat-icon><p>Select a conversation.</p></div>
+    }
+  </section>
+</div>

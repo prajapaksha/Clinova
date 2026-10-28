@@ -100,4 +100,13 @@ export class PatientApiService {
   removeDocument(id: PatientId, documentId: DocumentId): Observable<void> {
     return this.http.delete<void>(`${this.base}/${id}/documents/${documentId}`);
   }
+
+  documentFile(id: PatientId, documentId: DocumentId): Observable<Blob> {
+    return this.http.get(`${this.base}/${id}/documents/${documentId}/file`, { responseType: 'blob' });
+  }
+
+  /** Share with (or withdraw from) the patient portal; results need a physician. */
+  shareDocument(id: PatientId, documentId: DocumentId, shared: boolean, note?: string): Observable<PatientDocument> {
+    return this.http.put<PatientDocument>(`${this.base}/${id}/documents/${documentId}/sharing`, { shared, note });
+  }
 }

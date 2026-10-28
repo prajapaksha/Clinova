@@ -1,0 +1,117 @@
+<header class="pp-head"><div><h1 class="pp-title">Profile</h1><p class="pp-sub">Your details, notification choices and password.</p></div></header>
+<div class="pp-tabs" role="tablist">
+  <button type="button" role="tab" [class.is-active]="active() === 'details'" [attr.aria-selected]="active() === 'details'" (click)="setTab('details')">Details & insurance</button>
+  <button type="button" role="tab" [class.is-active]="active() === 'notifications'" [attr.aria-selected]="active() === 'notifications'" (click)="setTab('notifications')">Notifications</button>
+  <button type="button" role="tab" [class.is-active]="active() === 'security'" [attr.aria-selected]="active() === 'security'" (click)="setTab('security')">Password & security</button>
+</div>
+@if (error()) { <p class="pp-note pp-note--warn" role="alert"><mat-icon>error_outline</mat-icon>{{ error() }}</p> }
+
+@switch (active()) {
+  @case ('details') {
+    @if (profile(); as p) {
+      @if (p.pendingRequest; as r) {
+        <p class="pp-note pf__req" role="status"><mat-icon>hourglass_top</mat-icon>
+          Your changes to {{ fields(r) }} were sent {{ r.createdAt | date:'MMM d' }} and are waiting for review. Submitting again replaces them.</p>
+      }
+      @for (r of requests(); track r.id) {
+        @if (r.status === 'REJECTED' && $first) {
+          <p class="pp-note pp-note--warn pf__req"><mat-icon>info</mat-icon>Your last update was not applied: {{ r.rejectionReason }}</p>
+        }
+      }
+      <section class="pp-card">
+        <h2 class="pp-section-title">About you</h2>
+        <dl class="pp-kv">
+          <div><dt>Name</dt><dd>{{ p.firstName }} {{ p.lastName }}</dd></div>
+          <div><dt>Date of birth</dt><dd>{{ p.dateOfBirth | date:'MMMM d, y' : 'UTC' }}</dd></div>
+          <div><dt>Patient ID</dt><dd>{{ p.mrn }}</dd></div>
+        </dl>
+        <p class="pp-muted">To correct your legal name or date of birth, please bring ID to your next visit.</p>
+      </section>
+      <form class="pp-card" [formGroup]="form" (ngSubmit)="submit()">
+        <h2 class="pp-section-title">Update your information</h2>
+        <p class="pp-muted">Changes are reviewed by the office before they're added to your record.</p>
+        <div class="pp-form">
+          <h3 class="pf__h3">Personal</h3>
+          <mat-form-field appearance="outline"><mat-label>Preferred name</mat-label><input matInput formControlName="preferredName" /></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>Pronouns</mat-label><input matInput formControlName="pronouns" /></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>Preferred language</mat-label><input matInput formControlName="preferredLanguage" /></mat-form-field>
+
+          <h3 class="pf__h3">Contact</h3>
+          <mat-form-field appearance="outline"><mat-label>Mobile phone</mat-label><input matInput formControlName="primaryPhone" autocomplete="tel" /></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>Other phone</mat-label><input matInput formControlName="secondaryPhone" /></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>Email</mat-label><input matInput formControlName="email" type="email" autocomplete="email" /></mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Best way to reach you</mat-label>
+            <mat-select formControlName="preferredMethod">
+              <mat-option value="PHONE">Phone call</mat-option><mat-option value="SMS">Text message</mat-option>
+              <mat-option value="EMAIL">Email</mat-option><mat-option value="PATIENT_PORTAL">Portal message</mat-option>
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="pp-wide"><mat-label>Street address</mat-label><input matInput formControlName="street1" autocomplete="address-line1" /></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>Apt / suite</mat-label><input matInput formControlName="street2" autocomplete="address-line2" /></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>City</mat-label><input matInput formControlName="city" autocomplete="address-level2" /></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>State</mat-label><input matInput formControlName="state" autocomplete="address-level1" /></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>ZIP code</mat-label><input matInput formControlName="postalCode" autocomplete="postal-code" /></mat-form-field>
+
+          <h3 class="pf__h3">Emergency contact</h3>
+          <mat-form-field appearance="outline"><mat-label>Name</mat-label><input matInput formControlName="ecName" /></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>Relationship</mat-label><input matInput formControlName="ecRelationship" /></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>Phone</mat-label><input matInput formControlName="ecPhone" /></mat-form-field>
+
+          <h3 class="pf__h3">Primary insurance</h3>
+          <mat-form-field appearance="outline"><mat-label>Insurance company</mat-label><input matInput formControlName="insProvider" /></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>Member ID</mat-label><input matInput formControlName="insPolicy" /></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>Group number</mat-label><input matInput formControlName="insGroup" /></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>Policy holder</mat-label><input matInput formControlName="insSubscriber" /></mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>You are the policy holder's</mat-label>
+            <mat-select formControlName="insRelationship">
+              <mat-option value="SELF">Self</mat-option><mat-option value="SPOUSE">Spouse</mat-option>
+              <mat-option value="CHILD">Child</mat-option><mat-option value="OTHER">Other</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+        <div class="pp-actions">
+          <button mat-flat-button color="primary" [disabled]="busy() || form.pristine">Send for review</button>
+        </div>
+      </form>
+    }
+  }
+  @case ('notifications') {
+    <section class="pp-card">
+      <h2 class="pp-section-title">How should we contact you?</h2>
+      <p class="pp-muted">Choose the reminders and updates you'd like. Portal messages are always available here.</p>
+      @if (prefs(); as pr) {
+        <table class="pf__prefs">
+          <thead><tr><th>Notification</th><th class="c">Email</th><th class="c">Text</th></tr></thead>
+          <tbody>
+            @for (t of pr.topics; track t.key) {
+              <tr>
+                <td><strong>{{ t.label }}</strong><br /><span class="pp-muted">{{ t.description }}</span></td>
+                <td class="c"><mat-checkbox [checked]="pr.preferences[t.key].email" (change)="toggle(t.key, 'email', $event.checked)" [attr.aria-label]="t.label + ' by email'" /></td>
+                <td class="c"><mat-checkbox [checked]="pr.preferences[t.key].sms" (change)="toggle(t.key, 'sms', $event.checked)" [attr.aria-label]="t.label + ' by text'" /></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+        <p class="pp-muted">Text message rates may apply. Reply STOP to any text to opt out.</p>
+      }
+    </section>
+  }
+  @case ('security') {
+    <section class="pp-card">
+      <h2 class="pp-section-title">Change password</h2>
+      <form class="pf__pw" [formGroup]="pw" (ngSubmit)="changePassword()">
+        <mat-form-field appearance="outline"><mat-label>Current password</mat-label><input matInput type="password" formControlName="current" autocomplete="current-password" /></mat-form-field>
+        <mat-form-field appearance="outline"><mat-label>New password</mat-label><input matInput type="password" formControlName="next" autocomplete="new-password" /></mat-form-field>
+        <clv-password-rules [password]="pwValue().next ?? ''" />
+        <mat-form-field appearance="outline"><mat-label>Confirm new password</mat-label><input matInput type="password" formControlName="confirm" autocomplete="new-password" /></mat-form-field>
+        <div class="pp-actions"><button mat-flat-button color="primary" [disabled]="busy() || !pwOk()">Change password</button></div>
+      </form>
+    </section>
+    <section class="pp-card">
+      <h2 class="pp-section-title">Two-step verification</h2>
+      <p class="pp-muted">Coming soon: add a code from your phone when you sign in.</p>
+    </section>
+  }
+}

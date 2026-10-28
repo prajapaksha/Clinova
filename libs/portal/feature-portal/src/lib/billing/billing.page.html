@@ -1,0 +1,107 @@
+<header class="pp-head">
+  <div>
+    <h1 class="pp-title">Billing</h1>
+    <p class="pp-sub">Your bills after insurance, payments and saved cards. Questions? <a routerLink="/messages/new" [queryParams]="{ category: 'BILLING' }">Ask the billing team</a>.</p>
+  </div>
+</header>
+@if (error()) { <p class="pp-note pp-note--warn" role="alert">{{ error() }}</p> }
+
+<div class="bl__top">
+  <section class="pp-card pp-card--soft" aria-labelledby="bal">
+    <h2 id="bal" class="pp-section-title">Balance due</h2>
+    @if (summary(); as s) {
+      <div class="bl__big pp-money">{{ s.balanceCents | cents }}</div>
+      @if (s.overdue) { <span class="pp-badge pp-badge--danger">Past due</span> }
+      @if (s.oldestDueDate && s.balanceCents > 0) { <p class="pp-muted">Due by {{ s.oldestDueDate | date:'MMMM d' }}</p> }
+      @if (s.creditCents > 0) { <p class="bl__credit">You have {{ s.creditCents | cents }} in credit.</p> }
+      @if (s.balanceCents > 0) {
+        <a mat-flat-button color="primary" routerLink="pay">Pay now</a>
+      } @else {
+        <p class="pp-muted"><mat-icon inline>check_circle</mat-icon> Nothing to pay right now.</p>
+      }
+    }
+  </section>
+
+  <section class="pp-card" aria-labelledby="openbills">
+    <h2 id="openbills" class="pp-section-title">Open bills</h2>
+    <ul class="pp-list">
+      @for (i of open(); track i.id) {
+        <li>
+          <span class="pp-icon"><mat-icon>receipt_long</mat-icon></span>
+          <div class="pp-list__main">
+            <div class="pp-list__title">Visit on {{ i.serviceDate | date:'MMM d, y' }} <span [class]="'pp-badge pp-badge--' + status(i).tone">{{ status(i).label }}</span></div>
+            <div class="pp-list__meta">{{ i.providerName }} · Bill {{ i.number }}@if (i.dueDate) { · due {{ i.dueDate | date:'MMM d' }} }</div>
+          </div>
+          <div class="bl__amount pp-money">{{ i.balanceCents | cents }}</div>
+          <a mat-stroked-button [routerLink]="['invoices', i.id]">View</a>
+        </li>
+      } @empty {
+        <li class="pp-empty">No open bills.</li>
+      }
+    </ul>
+  </section>
+</div>
+
+<section class="pp-card" aria-labelledby="history">
+  <h2 id="history" class="pp-section-title">Payment history</h2>
+  <ul class="pp-list">
+    @for (p of payments(); track p.id) {
+      <li>
+        <span class="pp-icon"><mat-icon>{{ p.method === 'INSURANCE' ? 'health_and_safety' : 'payments' }}</mat-icon></span>
+        <div class="pp-list__main">
+          <div class="pp-list__title">{{ p.processedAt | date:'MMM d, y' }} · {{ paymentLabel(p) }}</div>
+          <div class="pp-list__meta">
+            {{ paymentDetail(p) }}
+          </div>
+        </div>
+        <div class="bl__amount pp-money">{{ p.amountCents | cents }}</div>
+      </li>
+    } @empty {
+      <li class="pp-empty">No payments yet.</li>
+    }
+  </ul>
+  @if (closed().length) {
+    <h3 class="pp-section-title">Paid bills</h3>
+    <ul class="pp-list">
+      @for (i of closed(); track i.id) {
+        <li>
+          <div class="pp-list__main"><div class="pp-list__title">Visit on {{ i.serviceDate | date:'MMM d, y' }}</div><div class="pp-list__meta">Bill {{ i.number }} · {{ status(i).label }}</div></div>
+          <div class="bl__amount pp-money">{{ i.subtotalCents - i.totalAdjustmentsCents | cents }}</div>
+          <a mat-button [routerLink]="['invoices', i.id]">Details</a>
+        </li>
+      }
+    </ul>
+  }
+</section>
+
+<section class="pp-card" aria-labelledby="cards">
+  <h2 id="cards" class="pp-section-title">Saved cards</h2>
+  <ul class="pp-list">
+    @for (c of cards(); track c.id) {
+      <li class="bl__card">
+        <span class="pp-icon"><mat-icon>credit_card</mat-icon></span>
+        <div class="pp-list__main">
+          <div class="pp-list__title">{{ c.brand }} ending in {{ c.last4 }}
+            @if (c.isDefault) { <span class="pp-badge pp-badge--ok">Default</span> }
+            @if (c.isExpired) { <span class="pp-badge pp-badge--danger">Expired</span> }</div>
+          <div class="pp-list__meta">{{ c.cardholderName }} · expires {{ c.expMonth }}/{{ c.expYear }}</div>
+        </div>
+        @if (!c.isDefault) { <button mat-button type="button" (click)="makeDefault(c)">Make default</button> }
+        <button mat-icon-button type="button" (click)="remove(c)" [attr.aria-label]="'Remove card ending ' + c.last4"><mat-icon>delete_outline</mat-icon></button>
+      </li>
+    } @empty {
+      <li class="pp-empty">No saved cards.</li>
+    }
+  </ul>
+  @if (adding()) {
+    <div class="bl__add">
+      <clv-card-form />
+      <div class="pp-actions">
+        <button mat-button type="button" (click)="adding.set(false)">Cancel</button>
+        <button mat-flat-button color="primary" type="button" [disabled]="busy()" (click)="saveCard()">Save card</button>
+      </div>
+    </div>
+  } @else {
+    <button mat-stroked-button type="button" class="bl__add" (click)="adding.set(true)"><mat-icon>add</mat-icon> Add a card</button>
+  }
+</section>

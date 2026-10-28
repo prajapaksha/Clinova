@@ -8,8 +8,8 @@ const ACTIVITY_KEY = 'clv_last_activity';
 export const IDLE_WARNING_SECONDS = 60;
 
 /**
- * Signs staff out after STAFF_IDLE_TIMEOUT_MINUTES without activity (PRD §5.1),
- * with a countdown warning for the last minute. Activity in any tab counts.
+ * Signs the user out after a period without activity (PRD §5.1: 15 minutes for staff,
+ * 30 for patients), with a countdown warning for the last minute. Activity in any tab counts.
  */
 @Injectable({ providedIn: 'root' })
 export class IdleTimeout {
@@ -21,6 +21,7 @@ export class IdleTimeout {
   readonly secondsLeft = signal<number | null>(null);
 
   private timeoutMs = STAFF_IDLE_TIMEOUT_MINUTES * 60_000;
+  private onTimeout: () => void = () => this.auth.signOut('idle');
   private lastActivity = Date.now();
   private lastPersisted = 0;
   private timer: ReturnType<typeof setInterval> | null = null;
@@ -29,10 +30,11 @@ export class IdleTimeout {
     if (e.key === ACTIVITY_KEY && e.newValue) this.lastActivity = Math.max(this.lastActivity, Number(e.newValue));
   };
 
-  /** Starts watching; stops automatically when `destroyRef` is destroyed. */
-  start(destroyRef: DestroyRef, timeoutMs = this.timeoutMs): void {
+  /** Starts watching; stops automatically when `destroyRef` is destroyed. Defaults to the staff policy. */
+  start(destroyRef: DestroyRef, options: { timeoutMs?: number; onTimeout?: () => void } = {}): void {
     this.stop();
-    this.timeoutMs = timeoutMs;
+    this.timeoutMs = options.timeoutMs ?? STAFF_IDLE_TIMEOUT_MINUTES * 60_000;
+    this.onTimeout = options.onTimeout ?? (() => this.auth.signOut('idle'));
     this.lastActivity = Date.now();
     const win = this.document.defaultView;
     this.zone.runOutsideAngular(() => {
@@ -76,7 +78,7 @@ export class IdleTimeout {
     if (remainingMs <= 0) {
       this.zone.run(() => {
         this.stop();
-        this.auth.signOut('idle');
+        this.onTimeout();
       });
       return;
     }

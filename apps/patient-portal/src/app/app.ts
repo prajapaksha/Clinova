@@ -3,10 +3,7 @@ import { RouterModule } from '@angular/router';
 
 @Component({
   imports: [RouterModule],
-  selector: 'app-root',
-  templateUrl: './app.html',
-  styleUrl: './app.scss',
+  selector: 'clv-root',
+  template: '<router-outlet />',
 })
-export class App {
-  protected title = 'patient-portal';
-}
+export class App {}

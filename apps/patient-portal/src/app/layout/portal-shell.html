@@ -1,0 +1,65 @@
+<a class="skip" href="#portal-main">Skip to content</a>
+
+<header class="top">
+  <div class="top__inner">
+    <a routerLink="/" class="brand" aria-label="Clinova patient portal home">
+      <span class="brand__mark" aria-hidden="true"><mat-icon>local_hospital</mat-icon></span>
+      <span class="brand__text">Clinova<small>Patient portal</small></span>
+    </a>
+
+    <nav class="top__nav" aria-label="Main">
+      @for (item of nav; track item.route) {
+        <a [routerLink]="item.route" routerLinkActive="is-active" [routerLinkActiveOptions]="{ exact: !!item.exact }" class="top__link">
+          {{ item.label }}
+          @if (item.route === '/messages' && unread()) { <span class="dot" [attr.aria-label]="unread() + ' unread'">{{ unread() }}</span> }
+        </a>
+      }
+    </nav>
+
+    <button mat-button class="me" [matMenuTriggerFor]="menu" aria-label="Account menu">
+      <span class="me__avatar" aria-hidden="true">{{ initials() }}</span>
+      <span class="me__name">{{ user()?.preferredName || user()?.firstName }}</span>
+      <mat-icon iconPositionEnd>expand_more</mat-icon>
+    </button>
+    <mat-menu #menu="matMenu" xPosition="before">
+      <a mat-menu-item routerLink="/profile"><mat-icon>person</mat-icon>Profile & insurance</a>
+      <a mat-menu-item routerLink="/profile" [queryParams]="{ tab: 'notifications' }"><mat-icon>notifications</mat-icon>Notification settings</a>
+      <a mat-menu-item routerLink="/profile" [queryParams]="{ tab: 'security' }"><mat-icon>lock</mat-icon>Password & security</a>
+      <button mat-menu-item (click)="session.signOut()"><mat-icon>logout</mat-icon>Sign out</button>
+    </mat-menu>
+  </div>
+</header>
+
+<main id="portal-main" class="main">
+  <router-outlet />
+</main>
+
+<footer class="foot">
+  <p><mat-icon>emergency</mat-icon> In an emergency, call <strong>911</strong>. For urgent questions, call the office at <a href="tel:+15550100100">(555) 010-0100</a>.</p>
+</footer>
+
+<nav class="tabs" aria-label="Main">
+  @for (item of nav; track item.route) {
+    <a [routerLink]="item.route" routerLinkActive="is-active" [routerLinkActiveOptions]="{ exact: !!item.exact }" class="tabs__item">
+      <span class="tabs__icon">
+        <mat-icon>{{ item.icon }}</mat-icon>
+        @if (item.route === '/messages' && unread()) { <span class="dot dot--icon">{{ unread() }}</span> }
+      </span>
+      {{ item.short }}
+    </a>
+  }
+</nav>
+
+@if (idle.secondsLeft(); as seconds) {
+  <div class="idle" role="alertdialog" aria-live="assertive" aria-labelledby="idle-title">
+    <div class="idle__card">
+      <mat-icon class="idle__icon">timer</mat-icon>
+      <h2 id="idle-title">Still there?</h2>
+      <p>To protect your health information, we'll sign you out in <strong>{{ seconds }}</strong> second{{ seconds === 1 ? '' : 's' }}.</p>
+      <div class="idle__actions">
+        <button mat-button (click)="session.signOut()">Sign out</button>
+        <button mat-flat-button color="primary" (click)="idle.extend()">Keep me signed in</button>
+      </div>
+    </div>
+  </div>
+}

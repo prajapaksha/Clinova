@@ -1,0 +1,126 @@
+<a mat-button routerLink="/appointments" class="pp-back"><mat-icon>arrow_back</mat-icon> Appointments</a>
+<header class="pp-head">
+  <div>
+    <h1 class="pp-title">{{ isReschedule() ? 'Reschedule appointment' : 'Book an appointment' }}</h1>
+    @if (existing(); as e) {
+      <p class="pp-sub">Currently {{ e.start | date:'EEEE, MMMM d · h:mm a' }} with {{ e.providerName }}</p>
+    }
+  </div>
+</header>
+
+@if (step() !== 'done' && !isReschedule()) {
+  <ol class="bk__steps" aria-label="Booking steps">
+    @for (label of ['Visit type', 'Provider', 'Date & time', 'Confirm']; track label; let i = $index) {
+      <li [class.is-done]="i < stepIndex()" [class.is-current]="i === stepIndex()" [attr.aria-current]="i === stepIndex() ? 'step' : null">
+        <span>{{ i + 1 }}</span>{{ label }}
+      </li>
+    }
+  </ol>
+}
+
+@if (error()) { <p class="pp-note pp-note--warn" role="alert"><mat-icon>error_outline</mat-icon>{{ error() }}</p> }
+
+@switch (step()) {
+  @case ('type') {
+    <h2 class="pp-section-title">What kind of visit do you need?</h2>
+    <div class="pp-grid">
+      @for (t of types(); track t.id) {
+        <button type="button" class="pp-card bk__choice" (click)="chooseType(t)">
+          <strong>{{ t.name }}</strong>
+          @if (t.description) { <span class="pp-muted">{{ t.description }}</span> }
+          <span class="pp-badge">{{ t.durationMinutes }} min</span>
+        </button>
+      } @empty {
+        <p class="pp-muted">Online booking isn't available right now. Please call the office.</p>
+      }
+    </div>
+    <p class="pp-note bk__urgent"><mat-icon>info</mat-icon>Feeling very unwell, or need to be seen today? Please call the office. For emergencies, call 911.</p>
+  }
+  @case ('provider') {
+    <h2 class="pp-section-title">Who would you like to see?</h2>
+    <div class="pp-grid">
+      @for (p of providers(); track p.id) {
+        <button type="button" class="pp-card bk__choice" (click)="chooseProvider(p)">
+          <span class="bk__who"><span class="bk__avatar" aria-hidden="true">{{ p.displayName.replace('Dr. ', '')[0] }}</span>
+            <span><strong>{{ p.displayName }}</strong>@if (p.isMyProvider) { <span class="pp-badge pp-badge--ok">Your provider</span> }<br />
+            <span class="pp-muted">{{ p.specialties.join(', ') }}</span></span></span>
+          @if (p.bio) { <span class="pp-muted bk__bio">{{ p.bio }}</span> }
+          @if (p.officeLocation) { <span class="pp-muted"><mat-icon inline>place</mat-icon> {{ p.officeLocation }}</span> }
+        </button>
+      }
+    </div>
+    <div class="pp-actions bk__nav"><button mat-button type="button" (click)="back()">Back</button></div>
+  }
+  @case ('time') {
+    <section class="pp-card">
+      <div class="bk__week">
+        <button mat-icon-button type="button" (click)="shiftWeek(-7)" [disabled]="!canGoBack()" aria-label="Previous week"><mat-icon>chevron_left</mat-icon></button>
+        <h2 class="pp-section-title">{{ provider()?.displayName }} · {{ type()?.name }}</h2>
+        <button mat-icon-button type="button" (click)="shiftWeek(7)" [disabled]="!canGoForward()" aria-label="Next week"><mat-icon>chevron_right</mat-icon></button>
+      </div>
+      @if (loadingSlots()) {
+        <div class="pp-empty"><mat-spinner diameter="28" /></div>
+      } @else {
+        <div class="bk__days" role="listbox" aria-label="Choose a day">
+          @for (d of days(); track d.date) {
+            <button type="button" role="option" class="bk__day" [class.is-active]="day() === d.date" [disabled]="!d.slots.length"
+                    [attr.aria-selected]="day() === d.date" (click)="day.set(d.date)">
+              <span>{{ dayLabel(d.date) | date:'EEE' }}</span><strong>{{ dayLabel(d.date) | date:'d' }}</strong>
+              <small>{{ d.slots.length ? d.slots.length + ' open' : '—' }}</small>
+            </button>
+          }
+        </div>
+        @if (slotsForDay().length) {
+          <h3 class="bk__dayname">{{ dayLabel(day()!) | date:'EEEE, MMMM d' }}</h3>
+          <div class="bk__slots" role="group" aria-label="Choose a time">
+            @for (s of slotsForDay(); track s.start) {
+              <button type="button" class="bk__slot" (click)="chooseSlot(s)">{{ s.start | date:'h:mm a' }}</button>
+            }
+          </div>
+        } @else {
+          <p class="pp-empty">No openings this week. <button mat-button type="button" (click)="shiftWeek(7)" [disabled]="!canGoForward()">Try next week</button></p>
+        }
+      }
+    </section>
+    @if (!isReschedule()) { <div class="pp-actions bk__nav"><button mat-button type="button" (click)="back()">Back</button></div> }
+  }
+  @case ('confirm') {
+    <section class="pp-card bk__summary">
+      <h2 class="pp-section-title">{{ isReschedule() ? 'Confirm your new time' : 'Review and confirm' }}</h2>
+      <dl class="pp-kv">
+        <div><dt>When</dt><dd>{{ slot()?.start | date:'EEEE, MMMM d' }}<br />{{ slot()?.start | date:'h:mm a' }} – {{ slot()?.end | date:'h:mm a' }}</dd></div>
+        <div><dt>With</dt><dd>{{ provider()?.displayName }}</dd></div>
+        <div><dt>Visit</dt><dd>{{ type()?.name }}</dd></div>
+        @if (provider()?.officeLocation) { <div><dt>Where</dt><dd>{{ provider()?.officeLocation }}</dd></div> }
+      </dl>
+      @if (!isReschedule()) {
+        <mat-form-field appearance="outline" class="bk__reason">
+          <mat-label>Reason for visit (optional)</mat-label>
+          <textarea matInput rows="3" maxlength="500" [(ngModel)]="reason" placeholder="e.g. Follow-up on blood pressure"></textarea>
+          <mat-hint>Helps your provider prepare. Please don't include urgent symptoms — call the office instead.</mat-hint>
+        </mat-form-field>
+      }
+      <div class="pp-actions">
+        <button mat-button type="button" (click)="back()">Back</button>
+        <button mat-flat-button color="primary" type="button" [disabled]="busy()" (click)="confirm()">
+          {{ busy() ? 'Confirming…' : isReschedule() ? 'Confirm new time' : 'Book appointment' }}
+        </button>
+      </div>
+    </section>
+  }
+  @case ('done') {
+    <section class="pp-card bk__done" role="status">
+      <mat-icon class="bk__check">check_circle</mat-icon>
+      <h2>{{ isReschedule() ? 'Your appointment was moved' : "You're booked!" }}</h2>
+      @if (result(); as r) {
+        <p>{{ r.start | date:'EEEE, MMMM d, h:mm a' }} with {{ r.providerName }}</p>
+        @if (r.location) { <p class="pp-muted">{{ r.location }}</p> }
+      }
+      <p class="pp-muted">We'll send a reminder before your visit. Please arrive 10 minutes early.</p>
+      <div class="pp-actions bk__center">
+        <a mat-stroked-button routerLink="/appointments">My appointments</a>
+        <a mat-flat-button color="primary" routerLink="/">Back to home</a>
+      </div>
+    </section>
+  }
+}

@@ -1,7 +1,9 @@
 import 'dotenv/config';
 import { PrismaClient } from '@prisma/client';
 import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3';
-import { randomUUID } from 'crypto';
+import { createHash, randomUUID } from 'crypto';
+import { mkdirSync, rmSync, writeFileSync } from 'fs';
+import { dirname, join } from 'path';
 import * as bcrypt from 'bcrypt';
 
 const dbUrl = (process.env['DATABASE_URL'] ?? 'file:./dev.db').replace(/^file:/, '');
@@ -881,9 +883,9 @@ const patients = [
 // ─── appointment types ───────────────────────────────────────────────────────
 
 const APPOINTMENT_TYPES = [
-  { name: 'New Patient Visit',  defaultDurationMinutes: 45, bufferAfterMinutes: 0, color: '#1976D2', defaultServiceCode: '99203' },
-  { name: 'Follow-Up Visit',    defaultDurationMinutes: 15, bufferAfterMinutes: 0, color: '#00897B', defaultServiceCode: '99213' },
-  { name: 'Annual Physical',    defaultDurationMinutes: 60, bufferAfterMinutes: 0, color: '#388E3C', defaultServiceCode: '99396' },
+  { name: 'New Patient Visit',  defaultDurationMinutes: 45, bufferAfterMinutes: 0, color: '#1976D2', defaultServiceCode: '99203', isPatientBookable: true, patientDescription: 'Your first visit with a provider here.' },
+  { name: 'Follow-Up Visit',    defaultDurationMinutes: 15, bufferAfterMinutes: 0, color: '#00897B', defaultServiceCode: '99213', isPatientBookable: true, patientDescription: 'Check in on an ongoing condition or a recent visit.' },
+  { name: 'Annual Physical',    defaultDurationMinutes: 60, bufferAfterMinutes: 0, color: '#388E3C', defaultServiceCode: '99396', isPatientBookable: true, patientDescription: 'Your yearly preventive check-up.' },
   { name: 'Urgent Care',        defaultDurationMinutes: 30, bufferAfterMinutes: 0, color: '#D32F2F', defaultServiceCode: '99214' },
   { name: 'Procedure',          defaultDurationMinutes: 90, bufferAfterMinutes: 15, color: '#7B1FA2', defaultServiceCode: '10060' },
 ];
@@ -1183,6 +1185,12 @@ async function main() {
   await prisma.encounterTemplate.deleteMany({});
   await prisma.appointment.deleteMany({});
   await prisma.appointmentType.deleteMany({});
+  await prisma.threadMessage.deleteMany({});
+  await prisma.messageThread.deleteMany({});
+  await prisma.refillRequest.deleteMany({});
+  await prisma.profileChangeRequest.deleteMany({});
+  await prisma.savedPaymentMethod.deleteMany({});
+  await prisma.patientAccount.deleteMany({});
   await prisma.patient.deleteMany({});
   await prisma.auditLog.deleteMany({});
   await prisma.staffCredential.deleteMany({});
@@ -1396,6 +1404,7 @@ async function main() {
   console.log(`✅ Seeded ${historyCount + 1} historical visits (incl. today's no-show and an overdue unsigned note).`);
 
   await seedBilling(chen.id, patel.id);
+  await seedPortal();
 }
 
 const ICD = (code: string, description: string) => ({ code, description });
@@ -1591,4 +1600,142 @@ async function seedBilling(chenId: string, patelId: string) {
   const claimCount = await prisma.insuranceClaim.count();
   const paymentCount = await prisma.payment.count();
   console.log(`? Seeded 2 fee schedules, ${seq} invoices, ${paymentCount} payments, ${claimCount} claims.`);
+}
+
+// --- patient portal ----------------------------------------------------------
+
+const PORTAL_PASSWORD = 'Portal@Patient2026';
+const STORAGE_DIR = process.env['FILE_STORAGE_DIR'] ?? join(process.cwd(), 'storage');
+const sha256 = (v: string) => createHash('sha256').update(v).digest('hex');
+
+/** A small single-page PDF with text lines (enough for demo lab reports). */
+function textPdf(lines: string[]): Buffer {
+  const esc = (t: string) => t.replace(/[\\()]/g, m => `\\${m}`);
+  const content = ['BT', '/F1 18 Tf', '56 760 Td', `(${esc(lines[0])}) Tj`, '/F1 11 Tf',
+    ...lines.slice(1).flatMap(l => ['0 -20 Td', `(${esc(l)}) Tj`]), 'ET'].join('\n');
+  const objects = [
+    '<< /Type /Catalog /Pages 2 0 R >>',
+    '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
+    '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>',
+    `<< /Length ${Buffer.byteLength(content)} >>\nstream\n${content}\nendstream`,
+    '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',
+  ];
+  let pdf = '%PDF-1.4\n';
+  const offsets: number[] = [];
+  objects.forEach((o, i) => {
+    offsets.push(Buffer.byteLength(pdf));
+    pdf += `${i + 1} 0 obj\n${o}\nendobj\n`;
+  });
+  const xref = Buffer.byteLength(pdf);
+  pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n${offsets.map(o => `${String(o).padStart(10, '0')} 00000 n \n`).join('')}`;
+  pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`;
+  return Buffer.from(pdf, 'latin1');
+}
+
+async function seedPortal() {
+  console.log('\n🌐 Seeding patient portal…\n');
+  const DAY = 86_400_000;
+  const ago = (days: number, hour = 10) => { const d = new Date(Date.now() - days * DAY); d.setHours(hour, 0, 0, 0); return d; };
+  const byName = (firstName: string, lastName: string) => prisma.patient.findFirstOrThrow({ where: { firstName, lastName } });
+  const james = await byName('James', 'Okafor');
+  const thomas = await byName('Thomas', 'Brennan');
+  const diane = await byName('Diane', 'Fletcher');
+  const nurse = await prisma.staff.findUniqueOrThrow({ where: { email: 'nurse.kim@clinova.health' } });
+  const desk = await prisma.staff.findUniqueOrThrow({ where: { email: 'reception@clinova.health' } });
+  const email = (p: { contactJson: string }) => (JSON.parse(p.contactJson).email as string).toLowerCase();
+  const passwordHash = await bcrypt.hash(PORTAL_PASSWORD, 10);
+
+  // Accounts: two active, one invited (code FLETCH26), the rest can self-register.
+  for (const [p, days] of [[james, 3], [thomas, 12]] as const) {
+    await prisma.patientAccount.create({
+      data: { patientId: p.id, email: email(p), passwordHash, status: 'ACTIVE', activatedAt: ago(60), lastLoginAt: ago(days, 19) },
+    });
+    console.log(`  ✓ [ACTIVE ]  ${p.firstName} ${p.lastName}  <${email(p)}>  pw: ${PORTAL_PASSWORD}`);
+  }
+  await prisma.patientAccount.create({
+    data: { patientId: diane.id, email: email(diane), status: 'INVITED', inviteCodeHash: sha256('FLETCH26'), inviteExpiresAt: new Date(Date.now() + 14 * DAY), invitedBy: desk.id },
+  });
+  console.log(`  ✓ [INVITED]  Diane Fletcher  <${email(diane)}>  invite code: FLET-CH26`);
+
+  await prisma.savedPaymentMethod.create({
+    data: { patientId: james.id, brand: 'Visa', last4: '4242', expMonth: 12, expYear: new Date().getFullYear() + 2, cardholderName: 'James Okafor', gatewayToken: `tok_sim_seed_${randomUUID().slice(0, 8)}`, isDefault: true },
+  });
+
+  // Documents with real files: a released result, a result awaiting release, a shared care plan.
+  rmSync(join(STORAGE_DIR, 'patients', james.id), { recursive: true, force: true });
+  const docs = [
+    { name: 'Hemoglobin A1c - result.pdf', category: 'LAB_REPORT', days: 6, shared: true, by: 'Dr. Ananya Patel, DO',
+      note: 'Your A1c has improved to 7.4% (from 8.1%). Great progress - keep taking metformin as prescribed. We will recheck in 3 months.',
+      lines: ['Clinova Health - Laboratory Report', `Patient: James Okafor   MRN: ${james.mrn}`, 'Test: Hemoglobin A1c', 'Result: 7.4 %   (reference < 5.7 %)', 'Previous: 8.1 %', 'Ordering provider: Dr. Ananya Patel, DO'] },
+    { name: 'Basic metabolic panel - result.pdf', category: 'LAB_REPORT', days: 1, shared: false, by: null, note: null,
+      lines: ['Clinova Health - Laboratory Report', `Patient: James Okafor   MRN: ${james.mrn}`, 'Test: Basic metabolic panel', 'Glucose: 132 mg/dL (H)   Creatinine: 1.1 mg/dL', 'Sodium: 139 mmol/L   Potassium: 4.3 mmol/L'] },
+    { name: 'Diabetes care plan.pdf', category: 'OTHER', days: 8, shared: true, by: 'Ji-Yeon Kim, RN', note: null,
+      lines: ['Your diabetes care plan', 'Check blood sugar each morning before breakfast.', 'Take metformin 1000 mg with breakfast and dinner.', 'Walk 30 minutes, 5 days a week.', 'Daily foot check; call us about any sores.'] },
+  ];
+  const documents = docs.map(d => {
+    const id = randomUUID();
+    const storageKey = `patients/${james.id}/${id}-${d.name.replace(/[^\w.-]+/g, '_')}`;
+    const data = textPdf(d.lines);
+    mkdirSync(dirname(join(STORAGE_DIR, storageKey)), { recursive: true });
+    writeFileSync(join(STORAGE_DIR, storageKey), data);
+    return {
+      id, patientId: james.id, category: d.category, name: d.name, storageKey, mimeType: 'application/pdf', sizeBytes: data.length,
+      uploadedBy: 'Ji-Yeon Kim', uploadedAt: ago(d.days + 1).toISOString(),
+      sharedWithPatient: d.shared, sharedAt: d.shared ? ago(d.days).toISOString() : null, sharedByName: d.by, releaseNote: d.note, patientViewedAt: null,
+    };
+  });
+  await prisma.patient.update({ where: { id: james.id }, data: { documentsJson: JSON.stringify(documents) } });
+  console.log(`  ✓ ${documents.length} documents for James Okafor (1 result awaiting release)`);
+
+  // A prescription James can request a refill for.
+  let rx = await prisma.prescription.findFirst({ where: { patientId: james.id, status: 'ACTIVE' } });
+  if (!rx) {
+    const enc = await prisma.encounter.findFirst({ where: { patientId: james.id, status: { in: ['SIGNED', 'AMENDED'] } }, orderBy: { createdAt: 'desc' } });
+    if (enc) {
+      rx = await prisma.prescription.create({
+        data: {
+          encounterId: enc.id, patientId: james.id, prescriberId: enc.providerId, refillsAllowed: 3, refillsRemaining: 2, issuedAt: enc.createdAt,
+          instructions: 'Take with meals.',
+          drugJson: JSON.stringify({ medicationName: 'Metformin', strength: '1000 mg', form: 'tablet', route: 'oral', dosageAmount: '1 tablet', frequency: 'twice daily', durationDays: 90 }),
+        },
+      });
+    }
+  }
+
+  // Conversations: one answered (unread by James), one waiting for the care team.
+  await prisma.messageThread.create({
+    data: {
+      patientId: james.id, subject: 'Metformin and an upset stomach', category: 'PRESCRIPTION', lastMessageAt: ago(2, 11), patientLastReadAt: ago(3, 9), staffLastReadAt: ago(2, 11),
+      messages: { create: [
+        { authorType: 'PATIENT', authorId: james.id, authorName: 'James Okafor', body: 'Since my dose went up I get an upset stomach in the mornings. Is that normal? Should I take it differently?', createdAt: ago(3, 9) },
+        { authorType: 'STAFF', authorId: nurse.id, authorName: 'Ji-Yeon Kim, RN', body: 'Hi James - that is a common side effect and usually settles in a couple of weeks. Taking it in the middle of a meal helps. If it continues past two weeks, let us know and Dr. Patel can switch you to the extended-release version.', createdAt: ago(2, 11) },
+      ] },
+    },
+  });
+  await prisma.messageThread.create({
+    data: {
+      patientId: thomas.id, subject: 'Question about my last bill', category: 'BILLING', lastMessageAt: ago(0, 8), patientLastReadAt: ago(0, 8),
+      messages: { create: [
+        { authorType: 'PATIENT', authorId: thomas.id, authorName: 'Thomas Brennan', body: 'Hi, my insurance should have covered my last visit. Could you check whether the claim was submitted? Thanks.', createdAt: ago(0, 8) },
+      ] },
+    },
+  });
+
+  if (rx) {
+    await prisma.refillRequest.create({
+      data: { patientId: james.id, prescriptionId: rx.id, pharmacy: 'Walgreens - 2200 Westheimer Rd, Houston', note: 'Running low - about 5 days left.', createdAt: ago(0, 7) },
+    });
+  }
+
+  const thomasContact = JSON.parse(thomas.contactJson);
+  await prisma.profileChangeRequest.create({
+    data: {
+      patientId: thomas.id,
+      createdAt: ago(1, 16),
+      changesJson: JSON.stringify({
+        contact: { old: thomasContact, new: { ...thomasContact, primaryPhone: '617-555-0699', mailingAddress: { ...thomasContact.mailingAddress, street1: '18 Harbor View Dr', postalCode: '02127' } } },
+      }),
+    },
+  });
+  console.log(`  ✓ 2 conversations, ${rx ? 1 : 0} refill request, 1 profile update for staff review`);
 }

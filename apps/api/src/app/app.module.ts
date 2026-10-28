@@ -14,12 +14,15 @@ import { EventsModule } from '../events/domain-event-bus';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { AuditModule } from '../audit/audit.module';
+import { StorageModule } from '../storage/file-storage';
+import { PortalModule } from '../portal/portal.module';
 
 @Module({
   imports: [
     PrismaModule,
     EventsModule,
     AuditModule,
+    StorageModule,
     StaffModule,
     AuthModule,
     PatientsModule,
@@ -27,6 +30,7 @@ import { AuditModule } from '../audit/audit.module';
     EncountersModule,
     ReportingModule,
     BillingModule,
+    PortalModule,
   ],
   controllers: [AppController],
   providers: [

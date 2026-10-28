@@ -146,7 +146,17 @@ export interface PatientDocument {
   readonly sizeBytes: number;
   readonly uploadedBy: string;
   readonly uploadedAt: Date;
+  /** Visible in the patient portal (results are released by a physician). */
+  readonly sharedWithPatient?: boolean;
+  readonly sharedAt?: Date | null;
+  readonly sharedByName?: string | null;
+  /** Note released to the patient with the document (e.g. the doctor's comment on a result). */
+  readonly releaseNote?: string | null;
+  readonly patientViewedAt?: Date | null;
 }
+
+/** Results need a physician's release before patients can see them (PRD §4.6). */
+export const RESULT_DOCUMENT_CATEGORIES: ReadonlyArray<DocumentCategory> = [DocumentCategory.LabReport, DocumentCategory.Imaging];
 
 export interface PatientAlert {
   readonly id: string;

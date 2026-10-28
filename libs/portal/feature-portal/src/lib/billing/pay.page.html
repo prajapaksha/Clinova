@@ -1,0 +1,60 @@
+<a mat-button routerLink="/billing" class="pp-back pp-noprint"><mat-icon>arrow_back</mat-icon> Billing</a>
+
+@if (receipt(); as r) {
+  <section class="pp-card py py__done" role="status">
+    <mat-icon class="py__check">check_circle</mat-icon>
+    <h1 class="pp-title">Thank you — payment received</h1>
+    <p class="pp-sub">A receipt has been sent to your email.</p>
+    <dl class="pp-kv py__receipt">
+      <div><dt>Amount</dt><dd>{{ r.amountCents | cents }}</dd></div>
+      <div><dt>Date</dt><dd>{{ r.processedAt | date:'MMM d, y, h:mm a' }}</dd></div>
+      <div><dt>Paid with</dt><dd>{{ (r.referenceNumber ?? '').split(' · ')[0] }}</dd></div>
+      <div><dt>Confirmation</dt><dd>{{ r.id.slice(-8).toUpperCase() }}</dd></div>
+    </dl>
+    <div class="pp-actions pp-noprint" style="justify-content: center">
+      <button mat-button type="button" (click)="print()"><mat-icon>print</mat-icon> Print receipt</button>
+      <a mat-flat-button color="primary" routerLink="/billing">Done</a>
+    </div>
+  </section>
+} @else {
+  <header class="pp-head"><div><h1 class="pp-title">Pay your bill</h1><p class="pp-sub">Payments are applied to your oldest bills first unless you pay a specific bill.</p></div></header>
+  <section class="pp-card py">
+    @if (summary(); as s) {
+      <h2 class="pp-section-title">How much?</h2>
+      <mat-radio-group class="py__group" [ngModel]="amountChoice()" (ngModelChange)="amountChoice.set($event)" name="amount" aria-label="How much to pay">
+        <mat-radio-button value="all">Full balance · {{ s.balanceCents | cents }}</mat-radio-button>
+        @if (bill(); as b) { <mat-radio-button value="bill">This bill ({{ b.number }}) · {{ b.balanceCents | cents }}</mat-radio-button> }
+        <mat-radio-button value="other">Another amount</mat-radio-button>
+      </mat-radio-group>
+      @if (amountChoice() === 'other') {
+        <mat-form-field appearance="outline" class="py__other">
+          <mat-label>Amount to pay</mat-label>
+          <span matTextPrefix>$&nbsp;</span>
+          <input matInput type="number" min="1" step="0.01" [ngModel]="otherAmount" (ngModelChange)="setOther($event)" name="other" />
+        </mat-form-field>
+      }
+
+      <h2 class="pp-section-title">Pay with</h2>
+      <mat-radio-group class="py__group" [ngModel]="method()" (ngModelChange)="method.set($event)" name="method" aria-label="Payment method">
+        @for (c of usableCards(); track c.id) {
+          <mat-radio-button [value]="c.id">{{ c.brand }} ending in {{ c.last4 }} · exp {{ c.expMonth }}/{{ c.expYear }}</mat-radio-button>
+        }
+        <mat-radio-button value="new">A new card</mat-radio-button>
+      </mat-radio-group>
+      @if (method() === 'new') { <div class="py__new"><clv-card-form [offerSave]="true" /></div> }
+
+      <div class="py__total"><span>Total</span><span class="pp-money">{{ amountCents() | cents }}</span></div>
+      @if (error()) { <p class="pp-note pp-note--warn" role="alert"><mat-icon>error_outline</mat-icon>{{ error() }}</p> }
+      <div class="pp-actions">
+        <span class="py__secure"><mat-icon inline>lock</mat-icon> Secure payment · card numbers are never stored</span>
+        <button mat-flat-button color="primary" type="button" [disabled]="busy() || amountCents() <= 0" (click)="pay()">
+          {{ busy() ? 'Processing…' : 'Pay ' + (amountCents() | cents) }}
+        </button>
+      </div>
+    } @else if (!error()) {
+      <p class="pp-muted">Loading…</p>
+    } @else {
+      <p class="pp-note pp-note--warn">{{ error() }}</p>
+    }
+  </section>
+}

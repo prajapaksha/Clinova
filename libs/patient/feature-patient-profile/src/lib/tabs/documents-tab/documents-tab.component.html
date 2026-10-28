@@ -65,17 +65,28 @@
                 <span>{{ formatSize(d.sizeBytes) }}</span>
                 <span>{{ d.uploadedAt | date:'mediumDate' }}</span>
               </div>
+              @if (d.sharedWithPatient) {
+                <div class="doc__shared" [matTooltip]="d.releaseNote ? 'Note: ' + d.releaseNote : ''">
+                  <mat-icon inline>visibility</mat-icon> In portal since {{ d.sharedAt | date:'MMM d' }}{{ d.patientViewedAt ? ' · viewed' : '' }}
+                </div>
+              }
             </div>
-            @if (perms.can('patient:profiles', 'full')) {
-              <button mat-icon-button class="doc__card-more" [matMenuTriggerFor]="docMenu" aria-label="Document actions">
-                <mat-icon>more_vert</mat-icon>
-              </button>
-              <mat-menu #docMenu>
-                <button mat-menu-item (click)="removeDocument(p.id, d.id)">
-                  <mat-icon>delete_outline</mat-icon> Remove
-                </button>
-              </mat-menu>
-            }
+            <button mat-icon-button class="doc__card-more" [matMenuTriggerFor]="docMenu" [attr.aria-label]="'Actions for ' + d.name">
+              <mat-icon>more_vert</mat-icon>
+            </button>
+            <mat-menu #docMenu>
+              <button mat-menu-item (click)="openDocument(p.id, d)"><mat-icon>open_in_new</mat-icon> Open</button>
+              @if (canShare(d)) {
+                @if (d.sharedWithPatient) {
+                  <button mat-menu-item (click)="share(p.id, d, false)"><mat-icon>visibility_off</mat-icon> Remove from portal</button>
+                } @else {
+                  <button mat-menu-item (click)="share(p.id, d, true)"><mat-icon>share</mat-icon> {{ isResult(d) ? 'Release result to patient' : 'Share with patient' }}</button>
+                }
+              }
+              @if (perms.can('patient:profiles', 'full')) {
+                <button mat-menu-item (click)="removeDocument(p.id, d.id)"><mat-icon>delete_outline</mat-icon> Remove</button>
+              }
+            </mat-menu>
           </div>
         }
       </div>

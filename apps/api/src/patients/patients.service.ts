@@ -1,4 +1,4 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import type { Patient as PrismaPatient } from '@prisma/client';
 import type {
@@ -18,10 +18,11 @@ import type {
   PatientId,
   Sex,
 } from '@clinova/patient/domain';
-import { AlertSeverity, AllergyType } from '@clinova/patient/domain';
-import { PATIENT_MEDICAL_FIELDS, hasAccess } from '@clinova/identity/domain';
+import { AlertSeverity, AllergyType, DocumentCategory, RESULT_DOCUMENT_CATEGORIES } from '@clinova/patient/domain';
+import { AuditAction, PATIENT_MEDICAL_FIELDS, hasAccess } from '@clinova/identity/domain';
 import { CreatePatientDto } from './dto/create-patient.dto';
 import { AuditContext, AuditService } from '../audit/audit.service';
+import { FileStorageService } from '../storage/file-storage';
 import { randomUUID } from 'crypto';
 
 function toPatient(row: PrismaPatient): Patient {
@@ -53,6 +54,8 @@ function toPatient(row: PrismaPatient): Patient {
   const documents: PatientDocument[] = docsRaw.map((d) => ({
     ...d,
     uploadedAt: new Date(d.uploadedAt),
+    sharedAt: d.sharedAt ? new Date(d.sharedAt) : null,
+    patientViewedAt: d.patientViewedAt ? new Date(d.patientViewedAt) : null,
   }));
 
   const alertsRaw: any[] = JSON.parse(row.alertsJson);
@@ -164,6 +167,7 @@ export class PatientsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
+    private readonly files: FileStorageService,
   ) {}
 
   async search(filters: {
@@ -384,11 +388,62 @@ export class PatientsService {
     if (!row) throw new NotFoundException(`Patient ${patientId} not found`);
 
     const docs: PatientDocument[] = JSON.parse(row.documentsJson);
+    const doc = docs.find((d) => d.id === documentId);
     const filtered = docs.filter((d) => d.id !== documentId);
     await this.prisma.patient.update({
       where: { id: patientId },
       data: { documentsJson: JSON.stringify(filtered) },
     });
+    if (doc) await this.files.remove(doc.storageKey);
+  }
+
+  async documentFile(patientId: string, documentId: string): Promise<{ document: PatientDocument; data: Buffer }> {
+    const patient = await this.findById(patientId);
+    const document = patient.documents.find((d) => d.id === documentId);
+    if (!document) throw new NotFoundException(`Document ${documentId} not found`);
+    return { document, data: await this.files.read(document.storageKey) };
+  }
+
+  /**
+   * Shares a document with the patient portal (or withdraws it). Results (lab reports,
+   * imaging) can only be released by a physician, optionally with a note (PRD §4.6).
+   */
+  async setDocumentSharing(patientId: string, documentId: string, shared: boolean, note: string | null, ctx: AuditContext): Promise<PatientDocument> {
+    const row = await this.prisma.patient.findUnique({ where: { id: patientId } });
+    if (!row) throw new NotFoundException(`Patient ${patientId} not found`);
+    const docs: Array<Record<string, unknown>> = JSON.parse(row.documentsJson);
+    const index = docs.findIndex((d) => d['id'] === documentId);
+    if (index < 0) throw new NotFoundException(`Document ${documentId} not found`);
+    const isResult = RESULT_DOCUMENT_CATEGORIES.includes(docs[index]['category'] as DocumentCategory);
+    if (isResult && !hasAccess(ctx.user?.role, 'clinical:notes', 'full')) {
+      throw new ForbiddenException('Only a physician can release results to the patient.');
+    }
+    if ((note?.length ?? 0) > 2000) throw new BadRequestException('The note is too long.');
+    docs[index] = {
+      ...docs[index],
+      sharedWithPatient: shared,
+      sharedAt: shared ? new Date().toISOString() : null,
+      sharedByName: shared && ctx.user ? `${ctx.user.firstName} ${ctx.user.lastName}` : null,
+      releaseNote: shared ? note?.trim() || null : null,
+      patientViewedAt: null,
+    };
+    await this.prisma.patient.update({ where: { id: patientId }, data: { documentsJson: JSON.stringify(docs) } });
+    await this.audit.log(ctx, {
+      action: AuditAction.Update, resourceType: 'Document', resourceId: documentId, patientId,
+      fieldName: 'sharedWithPatient', oldValue: !shared, newValue: shared,
+    });
+    return (await this.findById(patientId)).documents.find((d) => d.id === documentId) as PatientDocument;
+  }
+
+  /** Records the patient's first download of a shared document (drives "new" badges). */
+  async markDocumentViewed(patientId: string, documentId: string): Promise<void> {
+    const row = await this.prisma.patient.findUnique({ where: { id: patientId } });
+    if (!row) return;
+    const docs: Array<Record<string, unknown>> = JSON.parse(row.documentsJson);
+    const doc = docs.find((d) => d['id'] === documentId);
+    if (!doc || doc['patientViewedAt']) return;
+    doc['patientViewedAt'] = new Date().toISOString();
+    await this.prisma.patient.update({ where: { id: patientId }, data: { documentsJson: JSON.stringify(docs) } });
   }
 
   private async generateMrn(): Promise<string> {

@@ -1,0 +1,24 @@
+.rq__bar { display: flex; align-items: center; gap: 16px; margin-bottom: 12px; }
+.rq__hint { color: var(--clv-gray-600); font-size: 13px; }
+.rq__error { color: var(--clv-danger-text); }
+.rq__list { display: flex; flex-direction: column; gap: 12px; }
+.rq__card { background: #fff; border: 1px solid var(--clv-gray-200); border-radius: 12px; padding: 16px 20px; }
+.rq__card header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.rq__meta { color: var(--clv-gray-600); font-size: 13px; margin-top: 2px; }
+.rq__status { padding: 2px 10px; border-radius: 999px; font-size: 12px; text-transform: capitalize; background: var(--clv-gray-100); color: var(--clv-gray-700); }
+.rq__status[data-status='PENDING'] { background: var(--clv-warning-bg); color: var(--clv-warning-text); }
+.rq__status[data-status='APPROVED'] { background: var(--clv-success-bg); color: var(--clv-success-text); }
+.rq__status[data-status='DENIED'], .rq__status[data-status='REJECTED'] { background: var(--clv-danger-bg); color: var(--clv-danger-text); }
+.rq__card dl { display: flex; gap: 32px; margin: 12px 0 0; }
+.rq__card dt { font-size: 11px; text-transform: uppercase; color: var(--clv-gray-600); }
+.rq__card dd { margin: 2px 0 0; }
+.rq__note { margin: 12px 0 0; padding: 8px 12px; border-radius: 8px; background: var(--clv-gray-100); font-style: italic; }
+.rq__respond { display: flex; align-items: center; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+.rq__respond mat-form-field { flex: 1; min-width: 240px; }
+.rq__diff { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 13px; }
+.rq__diff th, .rq__diff td { padding: 8px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--clv-gray-100); white-space: pre-line; }
+.rq__diff thead th { font-size: 11px; text-transform: uppercase; color: var(--clv-gray-600); }
+.rq__diff tbody th { width: 160px; font-weight: 500; }
+.rq__new { background: var(--clv-success-bg); }
+.rq__empty { padding: 32px; text-align: center; color: var(--clv-gray-600); background: #fff; border: 1px solid var(--clv-gray-200); border-radius: 12px; }
+.rq__mrn { margin-left: 8px; }

@@ -1,5 +1,8 @@
 import { Component, computed, DestroyRef, effect, inject, signal, untracked } from '@angular/core';
-import { RouterModule } from '@angular/router';
+import { NavigationEnd, Router, RouterModule } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { filter, merge, timer } from 'rxjs';
+import { InboxCounts } from '@clinova/portal/data-access';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatIconModule } from '@angular/material/icon';
@@ -80,7 +83,7 @@ const QUICK_CREATE: NavItem[] = [
               [matTooltip]="collapsed() ? item.label : ''"
               matTooltipPosition="right"
               [attr.aria-label]="item.label">
-              <mat-icon>{{ item.icon }}</mat-icon>
+              <mat-icon [matBadge]="item.route === '/messages' && inbox.total() ? inbox.total() : null" matBadgeColor="warn" matBadgeSize="small">{{ item.icon }}</mat-icon>
               @if (!collapsed()) {
                 <span>{{ item.label }}</span>
               }
@@ -188,6 +191,7 @@ export class ShellComponent {
   protected readonly perms = inject(Permissions);
   protected readonly idle = inject(IdleTimeout);
   private readonly dialog = inject(MatDialog);
+  protected readonly inbox = inject(InboxCounts);
 
   protected readonly user = this.auth.currentUser;
   protected readonly navItems = computed(() => NAV_ITEMS.filter(i => this.visible(i)));
@@ -206,7 +210,12 @@ export class ShellComponent {
   private passwordDialog: MatDialogRef<ChangePasswordDialog> | null = null;
 
   constructor() {
-    this.idle.start(inject(DestroyRef));
+    const destroyRef = inject(DestroyRef);
+    this.idle.start(destroyRef);
+    // Portal messages and requests badge: refresh on navigation and every minute.
+    merge(timer(0, 60_000), inject(Router).events.pipe(filter(e => e instanceof NavigationEnd)))
+      .pipe(takeUntilDestroyed(destroyRef))
+      .subscribe(() => this.inbox.refresh());
     // A temporary or expired password must be replaced before continuing.
     effect(() => {
       if (this.auth.passwordExpired()) untracked(() => this.openPasswordDialog({ required: true }));

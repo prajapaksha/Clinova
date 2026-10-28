@@ -5,11 +5,12 @@ import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatChipsModule } from '@angular/material/chips';
+import { PortalAccessCard } from './portal-access-card';
 
 @Component({
   selector: 'clv-summary-tab',
   standalone: true,
-  imports: [CurrencyPipe, DatePipe, MatCardModule, MatIconModule, MatDividerModule, MatChipsModule],
+  imports: [CurrencyPipe, DatePipe, MatCardModule, MatIconModule, MatDividerModule, MatChipsModule, PortalAccessCard],
   templateUrl: './summary-tab.component.html',
   styleUrl: './summary-tab.component.scss',
 })

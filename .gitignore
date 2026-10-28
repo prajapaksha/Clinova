@@ -65,3 +65,6 @@ vitest.config.*.timestamp*
 
 # Local credentials
 docs/credentials.txt
+
+# Uploaded documents (local file storage)
+/storage/

@@ -19,6 +19,8 @@ export interface AuthUser {
   role: string;
   firstName: string;
   lastName: string;
+  /** Set for patient portal sessions (role PATIENT, id = portal account id). */
+  patientId?: string;
 }
 
 export interface SessionUser extends AuthUser {

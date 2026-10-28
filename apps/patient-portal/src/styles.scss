@@ -38,3 +38,68 @@ html, body {
   outline: 2px solid var(--clv-primary-700);
   outline-offset: 2px;
 }
+
+// ── Portal building blocks (calm, spacious; PRD §7.1) ─────────────────────────
+.mdc-button { border-radius: 10px !important; }
+.mat-mdc-form-field { width: 100%; }
+
+h1, h2, h3 { color: var(--clv-gray-900); }
+
+.pp-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; }
+.pp-title { margin: 0; font-size: 28px; line-height: 1.2; font-weight: 700; letter-spacing: -0.01em; }
+.pp-sub { margin: 6px 0 0; color: var(--clv-gray-600); font-size: 15px; }
+.pp-section-title { margin: 0 0 12px; font-size: 18px; font-weight: 600; }
+.pp-back { margin: -8px 0 8px -8px; }
+
+.pp-card { background: #fff; border: 1px solid var(--clv-gray-200); border-radius: 16px; padding: 20px; }
+.pp-card + .pp-card { margin-top: 16px; }
+.pp-grid > .pp-card { margin-top: 0; }
+.pp-card--soft { background: var(--clv-primary-50); border-color: transparent; }
+.pp-grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+.pp-stack { display: flex; flex-direction: column; gap: 16px; }
+
+.pp-list { list-style: none; margin: 0; padding: 0; }
+.pp-list > li { display: flex; align-items: center; gap: 14px; padding: 14px 0; border-bottom: 1px solid var(--clv-gray-100); }
+.pp-list > li:last-child { border-bottom: 0; }
+.pp-list__main { flex: 1; min-width: 0; }
+.pp-list__title { font-weight: 600; }
+.pp-list__meta { color: var(--clv-gray-600); font-size: 14px; margin-top: 2px; }
+.pp-icon { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; flex-shrink: 0; background: var(--clv-primary-50); color: var(--clv-primary-700); }
+
+.pp-badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; white-space: nowrap; background: var(--clv-gray-100); color: var(--clv-gray-700); }
+.pp-badge--ok { background: var(--clv-success-bg); color: var(--clv-success-text); }
+.pp-badge--warn { background: var(--clv-warning-bg); color: var(--clv-warning-text); }
+.pp-badge--danger { background: var(--clv-danger-bg); color: var(--clv-danger-text); }
+.pp-badge--info { background: var(--clv-info-bg); color: var(--clv-info-text); }
+
+.pp-empty { text-align: center; padding: 32px 16px; color: var(--clv-gray-600); }
+.pp-empty mat-icon { font-size: 40px; width: 40px; height: 40px; color: var(--clv-gray-400); }
+.pp-muted { color: var(--clv-gray-600); }
+.pp-error { color: var(--clv-danger-text); }
+.pp-note { display: flex; gap: 10px; padding: 12px 14px; border-radius: 12px; background: var(--clv-info-bg); color: var(--clv-info-text); font-size: 14px; }
+.pp-note--warn { background: var(--clv-warning-bg); color: var(--clv-warning-text); }
+.pp-note mat-icon { flex-shrink: 0; }
+
+.pp-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 20px; }
+.pp-tabs a, .pp-tabs button { padding: 8px 16px; border-radius: 999px; border: 1px solid var(--clv-gray-300); background: #fff; color: var(--clv-gray-700); text-decoration: none; font: inherit; font-weight: 500; cursor: pointer; }
+.pp-tabs .is-active { background: var(--clv-primary-700); border-color: var(--clv-primary-700); color: #fff; }
+
+.pp-kv { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px 24px; margin: 0; }
+.pp-kv dt { font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--clv-gray-600); }
+.pp-kv dd { margin: 2px 0 0; font-weight: 500; }
+
+.pp-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); column-gap: 14px; }
+.pp-form .pp-wide { grid-column: 1 / -1; }
+.pp-actions { display: flex; justify-content: flex-end; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
+
+.pp-money { font-variant-numeric: tabular-nums; }
+
+@media (max-width: 760px) {
+  .pp-title { font-size: 23px; }
+  .pp-card { padding: 16px; border-radius: 14px; }
+}
+
+@media print {
+  .pp-noprint { display: none !important; }
+  body { background: #fff; }
+}

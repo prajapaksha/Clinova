@@ -49,6 +49,8 @@ model Patient {
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
 
+  portalAccount PatientAccount?
+
   @@index([lastName])
   @@index([isArchived])
 }
@@ -137,6 +139,9 @@ model AppointmentType {
   color                  String        @default("#1976D2")
   /// Fee-schedule code billed for this visit type when the encounter has no service codes.
   defaultServiceCode     String?
+  /// Offered for self-scheduling in the patient portal.
+  isPatientBookable      Boolean       @default(false)
+  patientDescription     String?
   isActive               Boolean       @default(true)
   createdAt              DateTime      @default(now())
   updatedAt              DateTime      @updatedAt
@@ -328,4 +333,117 @@ model InsuranceClaim {
 model Counter {
   name  String @id
   value Int    @default(0)
+}
+
+// ─── Patient portal (PRD §4.8) ───────────────────────────────────────────────
+
+/// Portal login for a patient. Created by a staff invite (INVITED) or by self-registration.
+model PatientAccount {
+  id                    String    @id @default(cuid())
+  patientId             String    @unique
+  email                 String    @unique
+  passwordHash          String?
+  /// INVITED | ACTIVE | DISABLED
+  status                String    @default("INVITED")
+  inviteCodeHash        String?
+  inviteExpiresAt       DateTime?
+  invitedBy             String?
+  resetTokenHash        String?
+  resetExpiresAt        DateTime?
+  failedLoginAttempts   Int       @default(0)
+  lockedUntil           DateTime?
+  lastLoginAt           DateTime?
+  activatedAt           DateTime?
+  /// NotificationPreferences JSON.
+  notificationPrefsJson String    @default("{}")
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+}
+
+/// Secure message thread between a patient and the care team.
+model MessageThread {
+  id                String    @id @default(cuid())
+  patientId         String
+  subject           String
+  /// GENERAL | APPOINTMENT | BILLING | PRESCRIPTION | RESULTS
+  category          String    @default("GENERAL")
+  /// OPEN | CLOSED
+  status            String    @default("OPEN")
+  lastMessageAt     DateTime  @default(now())
+  patientLastReadAt DateTime?
+  staffLastReadAt   DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  messages ThreadMessage[]
+
+  @@index([patientId, lastMessageAt])
+  @@index([status, lastMessageAt])
+}
+
+model ThreadMessage {
+  id         String   @id @default(cuid())
+  threadId   String
+  /// PATIENT | STAFF
+  authorType String
+  authorId   String
+  authorName String
+  body       String
+  createdAt  DateTime @default(now())
+
+  thread MessageThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+
+  @@index([threadId, createdAt])
+}
+
+model RefillRequest {
+  id             String    @id @default(cuid())
+  patientId      String
+  prescriptionId String
+  pharmacy       String?
+  note           String?
+  /// PENDING | APPROVED | DENIED
+  status         String    @default("PENDING")
+  responseNote   String?
+  respondedBy    String?
+  respondedAt    DateTime?
+  createdAt      DateTime  @default(now())
+
+  @@index([patientId])
+  @@index([status, createdAt])
+}
+
+/// Demographic/contact/insurance changes submitted from the portal for staff review.
+model ProfileChangeRequest {
+  id              String    @id @default(cuid())
+  patientId       String
+  /// Record<field, { old, new }>
+  changesJson     String
+  /// PENDING | APPROVED | REJECTED
+  status          String    @default("PENDING")
+  reviewedBy      String?
+  reviewedAt      DateTime?
+  rejectionReason String?
+  createdAt       DateTime  @default(now())
+
+  @@index([patientId])
+  @@index([status, createdAt])
+}
+
+/// Tokenized card on file. Card numbers are never stored.
+model SavedPaymentMethod {
+  id             String   @id @default(cuid())
+  patientId      String
+  brand          String
+  last4          String
+  expMonth       Int
+  expYear        Int
+  cardholderName String
+  gatewayToken   String
+  isDefault      Boolean  @default(false)
+  createdAt      DateTime @default(now())
+
+  @@index([patientId])
 }

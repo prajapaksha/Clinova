@@ -8,10 +8,16 @@ import {
   Param,
   Patch,
   Post,
+  ParseFilePipeBuilder,
+  Put,
   Query,
+  Res,
+  StreamableFile,
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
+import { randomUUID } from 'crypto';
+import { IsBoolean, IsOptional, IsString, MaxLength } from 'class-validator';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AuditAction } from '@clinova/identity/domain';
@@ -19,16 +25,35 @@ import { full, Permit, read, write } from '../auth/decorators/permit.decorator';
 import { Audited, AuditCtx } from '../audit/audited';
 import type { AuditContext } from '../audit/audit.service';
 import { PatientsService } from './patients.service';
+import { FileStorageService, safeFileName } from '../storage/file-storage';
 import { CreatePatientDto } from './dto/create-patient.dto';
 import { SearchPatientsDto } from './dto/search-patients.dto';
 
 const patientParam = (req: { params: Record<string, string> }) => req.params['id'];
+const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
+
+class DocumentSharingDto {
+  @IsBoolean() shared!: boolean;
+  @IsOptional() @IsString() @MaxLength(2000) note?: string;
+}
+
+/** Minimal response surface used for file downloads. */
+export interface FileResponse {
+  setHeader(name: string, value: string): void;
+}
+
+export function contentDisposition(name: string, inline = false): string {
+  return `${inline ? 'inline' : 'attachment'}; filename="${safeFileName(name)}"`;
+}
 
 @ApiTags('patients')
 @Permit(read('patient:profiles'))
 @Controller('patients')
 export class PatientsController {
-  constructor(private readonly patients: PatientsService) {}
+  constructor(
+    private readonly patients: PatientsService,
+    private readonly files: FileStorageService,
+  ) {}
 
   @Get()
   @ApiOperation({ summary: 'Search patients' })
@@ -101,20 +126,56 @@ export class PatientsController {
   @Audited({ action: AuditAction.Create, resourceType: 'Document', resourceId: (_, r) => (r as { id: string }).id, patientId: patientParam })
   @UseInterceptors(FileInterceptor('file'))
   @ApiOperation({ summary: 'Upload document for patient' })
-  uploadDocument(
+  async uploadDocument(
     @Param('id') id: string,
-    @UploadedFile() file: Express.Multer.File & { originalname: string; mimetype: string; size: number },
+    @UploadedFile(
+      new ParseFilePipeBuilder()
+        .addFileTypeValidator({ fileType: /^(application\/pdf|image\/(jpeg|png))$/ })
+        .addMaxSizeValidator({ maxSize: MAX_UPLOAD_BYTES })
+        .build(),
+    )
+    file: Express.Multer.File & { originalname: string; mimetype: string; size: number; buffer: Buffer },
     @Body('category') category: string,
     @AuditCtx() ctx: AuditContext,
   ) {
+    await this.patients.findById(id);
+    const storageKey = `patients/${id}/${randomUUID()}-${safeFileName(file.originalname)}`;
+    await this.files.save(storageKey, file.buffer);
     return this.patients.addDocument(id, {
       category,
       name: file.originalname,
-      storageKey: `uploads/${id}/${Date.now()}-${file.originalname}`,
+      storageKey,
       mimeType: file.mimetype,
       sizeBytes: file.size,
       uploadedBy: ctx.user ? `${ctx.user.firstName} ${ctx.user.lastName}` : 'system',
     });
+  }
+
+  @Get(':id/documents/:documentId/file')
+  @Audited({ action: AuditAction.View, resourceType: 'Document', resourceId: req => req.params['documentId'], patientId: patientParam })
+  @ApiOperation({ summary: 'Download a document' })
+  async downloadDocument(
+    @Param('id') id: string,
+    @Param('documentId') documentId: string,
+    @Query('inline') inline: string | undefined,
+    @Res({ passthrough: true }) res: FileResponse,
+  ) {
+    const { document, data } = await this.patients.documentFile(id, documentId);
+    res.setHeader('Content-Type', document.mimeType);
+    res.setHeader('Content-Disposition', contentDisposition(document.name, inline === 'true'));
+    return new StreamableFile(data);
+  }
+
+  @Put(':id/documents/:documentId/sharing')
+  @Permit(write('patient:profiles'), full('clinical:notes'))
+  @ApiOperation({ summary: 'Share a document with the patient portal (results: physicians only)' })
+  shareDocument(
+    @Param('id') id: string,
+    @Param('documentId') documentId: string,
+    @Body() dto: DocumentSharingDto,
+    @AuditCtx() ctx: AuditContext,
+  ) {
+    return this.patients.setDocumentSharing(id, documentId, dto.shared, dto.note ?? null, ctx);
   }
 
   @Delete(':id/documents/:documentId')

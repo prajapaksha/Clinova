@@ -2,13 +2,15 @@
   "name": "patient-portal",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "projectType": "application",
-  "prefix": "app",
+  "prefix": "clv",
   "sourceRoot": "apps/patient-portal/src",
   "tags": [],
   "targets": {
     "build": {
       "executor": "@angular/build:application",
-      "outputs": ["{options.outputPath}"],
+      "outputs": [
+        "{options.outputPath}"
+      ],
       "options": {
         "outputPath": "dist/apps/patient-portal",
         "browser": "apps/patient-portal/src/main.ts",
@@ -20,7 +22,9 @@
             "input": "apps/patient-portal/public"
           }
         ],
-        "styles": ["apps/patient-portal/src/styles.scss"]
+        "styles": [
+          "apps/patient-portal/src/styles.scss"
+        ]
       },
       "configurations": {
         "production": {
@@ -57,7 +61,11 @@
           "buildTarget": "patient-portal:build:development"
         }
       },
-      "defaultConfiguration": "development"
+      "defaultConfiguration": "development",
+      "options": {
+        "port": 4300,
+        "proxyConfig": "apps/patient-portal/proxy.conf.json"
+      }
     },
     "lint": {
       "executor": "@nx/eslint:lint"
@@ -71,7 +79,7 @@
       "executor": "@nx/web:file-server",
       "options": {
         "buildTarget": "patient-portal:build",
-        "port": 4400,
+        "port": 4300,
         "staticFilePath": "dist/apps/patient-portal/browser",
         "spa": true
       }

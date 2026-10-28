@@ -1,0 +1,12 @@
+.rc__empty { display: block !important; }
+.rc__doc, .rc__med { align-items: flex-start !important; flex-wrap: wrap; }
+.rc__btns { display: flex; align-items: center; gap: 4px; }
+.rc__note { margin: 8px 0 0; padding: 8px 12px; border-radius: 10px; background: var(--clv-gray-50, #f8fafc); color: var(--clv-gray-700); font-style: italic; font-size: 14px; }
+.rc__refill { margin-top: 12px; display: grid; grid-template-columns: 1fr 1fr; column-gap: 12px; }
+.rc__refill .pp-actions { grid-column: 1 / -1; justify-content: flex-start; margin: 0; }
+.rc__grid { margin-top: 16px; }
+.rc__grid .pp-card + .pp-card { margin-top: 0; }
+.rc__grid p { margin: 0 0 10px; }
+.rc__allergy .pp-badge { margin-left: 4px; }
+.rc__fix { margin-top: 16px; }
+@media (max-width: 760px) { .rc__refill { grid-template-columns: 1fr; } }

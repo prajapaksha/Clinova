@@ -9,10 +9,7 @@
     "importHelpers": true,
     "target": "ES2022",
     "module": "ES2022",
-    "lib": [
-      "ES2022",
-      "dom"
-    ],
+    "lib": ["ES2022", "dom"],
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
@@ -20,42 +17,20 @@
     "noImplicitOverride": true,
     "noFallthroughCasesInSwitch": true,
     "paths": {
-      "@clinova/ui": [
-        "./libs/shared/ui/src/index.ts"
-      ],
-      "@clinova/auth": [
-        "./libs/shared/auth/src/index.ts"
-      ],
-      "@clinova/util": [
-        "./libs/shared/util/src/index.ts"
-      ],
-      "@clinova/identity/domain": [
-        "./libs/identity/domain/src/index.ts"
-      ],
-      "@clinova/patient/domain": [
-        "./libs/patient/domain/src/index.ts"
-      ],
-      "@clinova/scheduling/domain": [
-        "./libs/scheduling/domain/src/index.ts"
-      ],
-      "@clinova/staff/domain": [
-        "./libs/staff/domain/src/index.ts"
-      ],
-      "@clinova/clinical/domain": [
-        "./libs/clinical/domain/src/index.ts"
-      ],
-      "@clinova/billing/domain": [
-        "./libs/billing/domain/src/index.ts"
-      ],
+      "@clinova/ui": ["./libs/shared/ui/src/index.ts"],
+      "@clinova/auth": ["./libs/shared/auth/src/index.ts"],
+      "@clinova/util": ["./libs/shared/util/src/index.ts"],
+      "@clinova/identity/domain": ["./libs/identity/domain/src/index.ts"],
+      "@clinova/patient/domain": ["./libs/patient/domain/src/index.ts"],
+      "@clinova/scheduling/domain": ["./libs/scheduling/domain/src/index.ts"],
+      "@clinova/staff/domain": ["./libs/staff/domain/src/index.ts"],
+      "@clinova/clinical/domain": ["./libs/clinical/domain/src/index.ts"],
+      "@clinova/billing/domain": ["./libs/billing/domain/src/index.ts"],
       "@clinova/notifications/domain": [
         "./libs/notifications/domain/src/index.ts"
       ],
-      "@clinova/reporting/domain": [
-        "./libs/reporting/domain/src/index.ts"
-      ],
-      "@clinova/portal/domain": [
-        "./libs/portal/domain/src/index.ts"
-      ],
+      "@clinova/reporting/domain": ["./libs/reporting/domain/src/index.ts"],
+      "@clinova/portal/domain": ["./libs/portal/domain/src/index.ts"],
       "@clinova/identity/data-access": [
         "./libs/identity/data-access/src/index.ts"
       ],
@@ -65,9 +40,7 @@
       "@clinova/scheduling/data-access": [
         "./libs/scheduling/data-access/src/index.ts"
       ],
-      "@clinova/staff/data-access": [
-        "./libs/staff/data-access/src/index.ts"
-      ],
+      "@clinova/staff/data-access": ["./libs/staff/data-access/src/index.ts"],
       "@clinova/clinical/data-access": [
         "./libs/clinical/data-access/src/index.ts"
       ],
@@ -80,9 +53,7 @@
       "@clinova/reporting/data-access": [
         "./libs/reporting/data-access/src/index.ts"
       ],
-      "@clinova/portal/data-access": [
-        "./libs/portal/data-access/src/index.ts"
-      ],
+      "@clinova/portal/data-access": ["./libs/portal/data-access/src/index.ts"],
       "@clinova/patient/feature-patient-list": [
         "./libs/patient/feature-patient-list/src/index.ts"
       ],
@@ -118,11 +89,11 @@
       ],
       "@clinova/reporting/feature-dashboard": [
         "./libs/reporting/feature-dashboard/src/index.ts"
+      ],
+      "@clinova/portal/feature-portal": [
+        "./libs/portal/feature-portal/src/index.ts"
       ]
     }
   },
-  "exclude": [
-    "node_modules",
-    "tmp"
-  ]
+  "exclude": ["node_modules", "tmp"]
 }

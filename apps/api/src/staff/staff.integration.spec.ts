@@ -8,6 +8,7 @@ import { createTestDatabase } from '../testing/test-database';
 import { AuditContext, AuditService } from '../audit/audit.service';
 import { AuthService } from '../auth/auth.service';
 import { PatientsService } from '../patients/patients.service';
+import { FileStorageService } from '../storage/file-storage';
 import { StaffService, generateTemporaryPassword } from './staff.service';
 
 const DAY_MS = 86_400_000;
@@ -167,7 +168,7 @@ describe('Staff management, authentication & audit (integration)', () => {
 
   describe('patient field-level access', () => {
     it('stops limited roles from changing medical fields and audits each changed field', async () => {
-      const patients = new PatientsService(prisma, audit);
+      const patients = new PatientsService(prisma, audit, new FileStorageService());
       const frontDesk = ctxFor(await seedStaff('desk@test.health', UserRole.FrontDesk));
       const doctor = ctxFor(await seedStaff('doc@test.health', UserRole.Doctor));
       const patient = await patients.create({

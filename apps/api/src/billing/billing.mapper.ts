@@ -97,7 +97,7 @@ export function toInvoice(row: InvoiceWithRelations, names: NameLookup, now = ne
       method: a.payment.method as PaymentMethod,
       referenceNumber: a.payment.referenceNumber ?? a.payment.checkNumber,
       processedAt: a.payment.processedAt,
-      processedByName: names.staff.get(a.payment.processedBy),
+      processedByName: names.staff.get(a.payment.processedBy) ?? (a.payment.method === PaymentMethod.PatientPortal ? 'Patient portal' : undefined),
       voided: !!a.payment.voidedAt,
     }));
 
@@ -143,7 +143,7 @@ export function toPayment(
     referenceNumber: row.referenceNumber,
     checkNumber: row.checkNumber,
     processedBy: row.processedBy,
-    processedByName: names?.staff.get(row.processedBy),
+    processedByName: names?.staff.get(row.processedBy) ?? (row.method === PaymentMethod.PatientPortal ? 'Patient portal' : undefined),
     processedAt: row.processedAt,
     receiptSentTo: row.receiptSentTo,
     voidedAt: row.voidedAt,

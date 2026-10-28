@@ -1,0 +1,134 @@
+<header class="pp-head">
+  <div>
+    <h1 class="pp-title">Health records</h1>
+    <p class="pp-sub">Visit summaries, test results and your medications. Questions? <a routerLink="/messages/new">Message your care team</a>.</p>
+  </div>
+</header>
+
+<div class="pp-tabs" role="tablist">
+  <button type="button" role="tab" [class.is-active]="active() === 'visits'" [attr.aria-selected]="active() === 'visits'" (click)="setTab('visits')">Visit summaries</button>
+  <button type="button" role="tab" [class.is-active]="active() === 'documents'" [attr.aria-selected]="active() === 'documents'" (click)="setTab('documents')">Results & documents</button>
+  <button type="button" role="tab" [class.is-active]="active() === 'medications'" [attr.aria-selected]="active() === 'medications'" (click)="setTab('medications')">Medications & allergies</button>
+</div>
+@if (error()) { <p class="pp-note pp-note--warn" role="alert">{{ error() }}</p> }
+
+@switch (active()) {
+  @case ('visits') {
+    <section class="pp-card">
+      <ul class="pp-list">
+        @for (v of visits(); track v.id) {
+          <li>
+            <span class="pp-icon"><mat-icon>summarize</mat-icon></span>
+            <div class="pp-list__main">
+              <div class="pp-list__title">{{ v.date | date:'MMMM d, y' }} · {{ v.providerName }}</div>
+              <div class="pp-list__meta">{{ v.reasonForVisit || 'Office visit' }}@if (v.primaryDiagnosis) { · {{ v.primaryDiagnosis }} }</div>
+            </div>
+            <a mat-stroked-button [routerLink]="['visits', v.id]">View</a>
+          </li>
+        } @empty {
+          <li class="pp-empty rc__empty">Visit summaries appear here after your provider completes your visit notes.</li>
+        }
+      </ul>
+    </section>
+  }
+  @case ('documents') {
+    <section class="pp-card">
+      <h2 class="pp-section-title">Test results</h2>
+      <ul class="pp-list">
+        @for (d of results(); track d.id) {
+          <li class="rc__doc">
+            <span class="pp-icon"><mat-icon>science</mat-icon></span>
+            <div class="pp-list__main">
+              <div class="pp-list__title">{{ d.name }} @if (d.isNew) { <span class="pp-badge pp-badge--info">New</span> }</div>
+              <div class="pp-list__meta">Released {{ d.sharedAt | date:'MMM d, y' }}@if (d.sharedByName) { by {{ d.sharedByName }} }</div>
+              @if (d.note) { <p class="rc__note"><mat-icon inline>comment</mat-icon> “{{ d.note }}”</p> }
+            </div>
+            <div class="rc__btns">
+              <button mat-stroked-button type="button" (click)="open(d)">View</button>
+              <button mat-icon-button type="button" (click)="open(d, true)" [attr.aria-label]="'Download ' + d.name"><mat-icon>download</mat-icon></button>
+            </div>
+          </li>
+        } @empty {
+          <li class="pp-empty rc__empty">No results yet. Your doctor reviews results before releasing them here.</li>
+        }
+      </ul>
+    </section>
+    <section class="pp-card">
+      <h2 class="pp-section-title">Documents</h2>
+      <ul class="pp-list">
+        @for (d of otherDocs(); track d.id) {
+          <li>
+            <span class="pp-icon"><mat-icon>description</mat-icon></span>
+            <div class="pp-list__main">
+              <div class="pp-list__title">{{ d.name }} @if (d.isNew) { <span class="pp-badge pp-badge--info">New</span> }</div>
+              <div class="pp-list__meta">Shared {{ d.sharedAt | date:'MMM d, y' }} · {{ fileSize(d.sizeBytes) }}</div>
+            </div>
+            <div class="rc__btns">
+              <button mat-stroked-button type="button" (click)="open(d)">View</button>
+              <button mat-icon-button type="button" (click)="open(d, true)" [attr.aria-label]="'Download ' + d.name"><mat-icon>download</mat-icon></button>
+            </div>
+          </li>
+        } @empty {
+          <li class="pp-empty rc__empty">Documents the office shares with you will appear here.</li>
+        }
+      </ul>
+    </section>
+  }
+  @case ('medications') {
+    @if (health(); as h) {
+      <section class="pp-card">
+        <h2 class="pp-section-title">Medications</h2>
+        <ul class="pp-list">
+          @for (m of h.medications; track m.name) {
+            <li class="rc__med">
+              <span class="pp-icon"><mat-icon>medication</mat-icon></span>
+              <div class="pp-list__main">
+                <div class="pp-list__title">{{ m.name }}</div>
+                @if (m.directions) { <div class="pp-list__meta">{{ m.directions }}</div> }
+                @if (m.prescriberName) { <div class="pp-list__meta">Prescribed by {{ m.prescriberName }} · {{ m.refillsRemaining }} refill{{ m.refillsRemaining === 1 ? '' : 's' }} left</div> }
+                @if (refillStatus(m); as r) {
+                  @if (r.status === 'PENDING') { <span class="pp-badge pp-badge--warn">Refill requested {{ r.createdAt | date:'MMM d' }}</span> }
+                  @else if (r.status === 'APPROVED') { <span class="pp-badge pp-badge--ok">Refill approved {{ r.respondedAt | date:'MMM d' }}</span> }
+                  @else { <span class="pp-badge pp-badge--danger">Refill not approved</span> }
+                  @if (r.responseNote) { <p class="rc__note">“{{ r.responseNote }}” — {{ r.respondedByName }}</p> }
+                }
+                @if (refillFor()?.name === m.name) {
+                  <form class="rc__refill" (ngSubmit)="sendRefill()">
+                    <mat-form-field appearance="outline"><mat-label>Pharmacy</mat-label><input matInput name="pharmacy" [(ngModel)]="pharmacy" placeholder="e.g. Main St Pharmacy" /></mat-form-field>
+                    <mat-form-field appearance="outline"><mat-label>Note for your doctor (optional)</mat-label><input matInput name="note" [(ngModel)]="refillNote" /></mat-form-field>
+                    <div class="pp-actions">
+                      <button mat-button type="button" (click)="refillFor.set(null)">Cancel</button>
+                      <button mat-flat-button color="primary" [disabled]="busy()">Send request</button>
+                    </div>
+                  </form>
+                }
+              </div>
+              @if (m.prescriptionId && !m.pendingRefill && refillFor()?.name !== m.name) {
+                <button mat-stroked-button type="button" (click)="startRefill(m)">Request refill</button>
+              }
+            </li>
+          } @empty {
+            <li class="pp-empty rc__empty">No medications on file.</li>
+          }
+        </ul>
+      </section>
+      <div class="pp-grid rc__grid">
+        <section class="pp-card">
+          <h2 class="pp-section-title">Allergies</h2>
+          @for (a of h.allergies; track a.allergen) {
+            <p class="rc__allergy"><strong>{{ a.allergen }}</strong> <span class="pp-badge" [class.pp-badge--danger]="a.severity === 'CRITICAL' || a.severity === 'SEVERE'">{{ a.severity.toLowerCase() }}</span><br /><span class="pp-muted">{{ a.reaction }}</span></p>
+          } @empty { <p class="pp-muted">No known allergies.</p> }
+        </section>
+        <section class="pp-card">
+          <h2 class="pp-section-title">Conditions</h2>
+          @for (c of h.conditions; track c) { <p>{{ c }}</p> } @empty { <p class="pp-muted">None recorded.</p> }
+        </section>
+        <section class="pp-card">
+          <h2 class="pp-section-title">Immunizations</h2>
+          @for (i of h.immunizations; track i) { <p>{{ i }}</p> } @empty { <p class="pp-muted">None recorded.</p> }
+        </section>
+      </div>
+      <p class="pp-muted rc__fix">See something wrong? <a routerLink="/messages/new" [queryParams]="{ category: 'GENERAL', subject: 'Correction to my health record' }">Let us know</a>.</p>
+    }
+  }
+}
