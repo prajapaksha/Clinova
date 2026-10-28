@@ -9,10 +9,22 @@ import { PatientsModule } from '../patients/patients.module';
 import { AppointmentsModule } from './appointments/appointments.module';
 import { EncountersModule } from '../encounters/encounters.module';
 import { ReportingModule } from '../reporting/reporting.module';
+import { BillingModule } from '../billing/billing.module';
+import { EventsModule } from '../events/domain-event-bus';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @Module({
-  imports: [PrismaModule, StaffModule, AuthModule, PatientsModule, AppointmentsModule, EncountersModule, ReportingModule],
+  imports: [
+    PrismaModule,
+    EventsModule,
+    StaffModule,
+    AuthModule,
+    PatientsModule,
+    AppointmentsModule,
+    EncountersModule,
+    ReportingModule,
+    BillingModule,
+  ],
   controllers: [AppController],
   providers: [
     AppService,

@@ -1,0 +1,87 @@
+<h2 mat-dialog-title>Take payment</h2>
+<mat-dialog-content>
+  @if (patientName(); as name) {
+    <p class="tp__patient"><mat-icon>person</mat-icon> {{ name }}</p>
+  } @else {
+    <mat-form-field appearance="outline" class="tp__full">
+      <mat-label>Patient</mat-label>
+      <mat-icon matPrefix>search</mat-icon>
+      <input matInput [formControl]="patientQuery" [matAutocomplete]="auto" placeholder="Name or MRN" cdkFocusInitial />
+      <mat-autocomplete #auto="matAutocomplete" [displayWith]="displayPatient" (optionSelected)="pickPatient($event)">
+        @for (p of patientResults(); track p.id) {
+          <mat-option [value]="p">{{ p.firstName }} {{ p.lastName }} · {{ p.mrn }}</mat-option>
+        }
+      </mat-autocomplete>
+    </mat-form-field>
+  }
+
+  @if (patientId()) {
+    <h3 class="tp__heading">Apply to</h3>
+    @if (loadingInvoices()) {
+      <div class="tp__loading"><mat-spinner diameter="24" /></div>
+    } @else {
+      <ul class="tp__invoices">
+        @for (inv of openInvoices(); track inv.id) {
+          <li>
+            <mat-checkbox [checked]="selectedIds().has(inv.id)" (change)="toggle(inv.id, $event.checked)">
+              <span class="tp__inv">
+                <strong>{{ inv.number }}</strong>
+                <span>{{ inv.serviceDate | date:'MMM d, y' }} · balance {{ inv.balanceCents | cents }}</span>
+              </span>
+            </mat-checkbox>
+            @if (preview().byId.get(inv.id); as applied) {
+              <span class="tp__applied">−{{ applied | cents }}</span>
+            }
+          </li>
+        } @empty {
+          <li class="tp__none">No open invoices — the payment will be kept as credit on the account.</li>
+        }
+      </ul>
+    }
+
+    <form [formGroup]="form" class="tp__grid">
+      <mat-form-field appearance="outline">
+        <mat-label>Amount</mat-label>
+        <span matTextPrefix>$&nbsp;</span>
+        <input matInput type="number" formControlName="amount" min="0.01" step="0.01" />
+        @if (form.controls.amount.invalid) { <mat-error>Enter an amount</mat-error> }
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Method</mat-label>
+        <mat-select formControlName="method">
+          @for (m of methods; track m) { <mat-option [value]="m">{{ methodLabels[m] }}</mat-option> }
+        </mat-select>
+      </mat-form-field>
+      @if (isCard()) {
+        <mat-form-field appearance="outline">
+          <mat-label>Authorization / reference #</mat-label>
+          <input matInput formControlName="referenceNumber" maxlength="100" />
+          <mat-hint>From the card terminal receipt</mat-hint>
+        </mat-form-field>
+      }
+      @if (isCheck()) {
+        <mat-form-field appearance="outline">
+          <mat-label>Check number</mat-label>
+          <input matInput formControlName="checkNumber" maxlength="50" required />
+        </mat-form-field>
+      }
+      <mat-form-field appearance="outline">
+        <mat-label>Email receipt to (optional)</mat-label>
+        <input matInput type="email" formControlName="receiptEmail" />
+        @if (form.controls.receiptEmail.invalid) { <mat-error>Enter a valid email</mat-error> }
+      </mat-form-field>
+    </form>
+
+    @if (preview().unappliedCents > 0 && preview().amountCents > 0) {
+      <p class="tp__credit"><mat-icon>info</mat-icon> {{ preview().unappliedCents | cents }} exceeds the selected balances and will be kept as account credit.</p>
+    }
+  }
+
+  @if (error()) { <p class="tp__error" role="alert">{{ error() }}</p> }
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button mat-dialog-close type="button">Cancel</button>
+  <button mat-flat-button color="primary" type="button" (click)="submit()" [disabled]="!patientId() || submitting()">
+    @if (submitting()) { <mat-spinner diameter="18" /> } @else { Record {{ preview().amountCents | cents }} }
+  </button>
+</mat-dialog-actions>

@@ -1,0 +1,155 @@
+<div class="bd">
+  <header class="bd__header">
+    <div>
+      <h1 class="bd__title">Billing Dashboard</h1>
+      <p class="bd__sub">Real-time overview of the practice's financial health.</p>
+    </div>
+    <div class="bd__actions">
+      <button mat-stroked-button type="button" (click)="generateStatement()"><mat-icon>description</mat-icon> Generate statement</button>
+      <button mat-stroked-button type="button" (click)="takePayment()"><mat-icon>payments</mat-icon> Process payment</button>
+      <a mat-flat-button color="primary" routerLink="../invoices/new"><mat-icon>add</mat-icon> New invoice</a>
+    </div>
+  </header>
+
+  <div class="bd__progress">@if (loading()) { <mat-progress-bar mode="indeterminate" /> }</div>
+
+  @if (error() && !summary()) {
+    <div class="bd__error" role="alert">
+      <mat-icon>cloud_off</mat-icon>
+      <p>Billing data could not be loaded.</p>
+      <button mat-stroked-button type="button" (click)="load()">Try again</button>
+    </div>
+  }
+
+  @if (summary(); as s) {
+    <div class="bd__links">
+      <a routerLink="../invoices" [queryParams]="{ status: 'DRAFT' }" class="bd__link"><mat-icon>edit_note</mat-icon> {{ s.draftCount }} drafts to review</a>
+      <a routerLink="../invoices" [queryParams]="{ status: 'OVERDUE' }" class="bd__link bd__link--warn"><mat-icon>schedule</mat-icon> {{ s.overdueCount }} overdue</a>
+      <a routerLink="../claims" class="bd__link"><mat-icon>assignment</mat-icon> {{ s.openClaims }} open claims</a>
+    </div>
+
+    <section class="bd__row bd__row--kpis">
+      <article class="card card--ar">
+        <div class="card__top">
+          <p class="card__label">Total accounts receivable</p>
+          <mat-icon>account_balance_wallet</mat-icon>
+        </div>
+        <p class="card__value">{{ s.totalArCents | cents }}</p>
+        @if (arTrend() !== null) {
+          <p class="card__trend" [class.card__trend--up]="arTrend()! > 0">
+            <mat-icon>{{ arTrend()! > 0 ? 'trending_up' : 'trending_down' }}</mat-icon>
+            {{ arTrend()! > 0 ? '+' : '' }}{{ arTrend() | percent:'1.0-1' }} vs. 30 days ago
+          </p>
+        }
+      </article>
+
+      <article class="card">
+        <div class="card__top">
+          <p class="card__label">Today's collections</p>
+          <mat-icon>payments</mat-icon>
+        </div>
+        <p class="card__value">{{ s.collectedTodayCents | cents }}</p>
+        <p class="card__meta">{{ s.paymentsToday }} payment{{ s.paymentsToday === 1 ? '' : 's' }} · 30-day daily average {{ s.averageDailyCollectionsCents | cents }}</p>
+      </article>
+
+      <article class="card card--aging">
+        <div class="card__top">
+          <p class="card__label">Aging summary</p>
+          <span class="card__tag">Live</span>
+        </div>
+        <div class="aging">
+          @for (b of s.aging; track b.label; let i = $index) {
+            <div class="aging__bucket" [attr.data-index]="i">
+              <span class="aging__label">{{ b.label }}</span>
+              <span class="aging__value">{{ b.totalCents | cents:'compact' }}</span>
+              <span class="aging__bar"><span [style.width.%]="(b.totalCents / agingMax()) * 100"></span></span>
+              <span class="aging__count">{{ b.invoiceCount }} inv.</span>
+            </div>
+          }
+        </div>
+      </article>
+    </section>
+
+    <section class="bd__row bd__row--charts">
+      <article class="card">
+        <div class="card__top">
+          <h2 class="card__title">Revenue trend</h2>
+          <span class="legend">
+            <span class="legend__dot legend__dot--charged"></span> Charged
+            <span class="legend__dot legend__dot--collected"></span> Collected
+          </span>
+        </div>
+        <div class="trend" role="img" [attr.aria-label]="trendLabel()">
+          @for (m of trend(); track m.month) {
+            <div class="trend__col">
+              <div class="trend__bars">
+                <span class="trend__bar trend__bar--charged" [style.height.%]="m.chargedPct" [title]="'Charged ' + (m.chargedCents | cents)"></span>
+                <span class="trend__bar trend__bar--collected" [style.height.%]="m.collectedPct" [title]="'Collected ' + (m.collectedCents | cents)"></span>
+              </div>
+              <span class="trend__label">{{ m.label }}</span>
+            </div>
+          }
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="card__top"><h2 class="card__title">Payer mix</h2><span class="card__tag">6 months</span></div>
+        <div class="mix">
+          <div class="mix__donut" [style.background]="payerMix().gradient" role="img" [attr.aria-label]="mixLabel()">
+            <div class="mix__hole">
+              @if (payerMix().top; as top) {
+                <strong>{{ top.share | percent }}</strong><span>{{ payerLabel(top.category) }}</span>
+              }
+            </div>
+          </div>
+          <ul class="mix__legend">
+            @for (e of payerMix().entries; track e.category) {
+              <li><span class="legend__dot" [style.background]="e.color"></span> {{ e.label }} <strong>{{ e.share | percent }}</strong></li>
+            }
+          </ul>
+        </div>
+      </article>
+    </section>
+
+    <section class="card card--table">
+      <div class="card__top">
+        <h2 class="card__title">Recent invoices</h2>
+        <a mat-button routerLink="../invoices">View all <mat-icon iconPositionEnd>arrow_forward</mat-icon></a>
+      </div>
+      <table class="inv">
+        <thead>
+          <tr><th scope="col">Date</th><th scope="col">Patient</th><th scope="col">Invoice #</th><th scope="col">Status</th><th scope="col" class="num">Amount</th><th scope="col" class="num">Balance</th><th scope="col"><span class="sr-only">Actions</span></th></tr>
+        </thead>
+        <tbody>
+          @for (inv of s.recentInvoices; track inv.id) {
+            <tr>
+              <td>{{ inv.serviceDate | date:'MMM d, y' }}</td>
+              <td>
+                <span class="inv__patient">
+                  <span class="inv__avatar" aria-hidden="true">{{ initials(inv.patientName) }}</span>
+                  <span><strong>{{ inv.patientName }}</strong><small>DOB {{ inv.patientDob | date:'MM/dd/y' }}</small></span>
+                </span>
+              </td>
+              <td><a [routerLink]="['../invoices', inv.id]" class="inv__number">{{ inv.number }}</a></td>
+              <td><clv-status-chip [status]="inv.status" /></td>
+              <td class="num">{{ inv.subtotalCents | cents }}</td>
+              <td class="num">{{ inv.balanceCents | cents }}</td>
+              <td class="inv__actions">
+                <button mat-icon-button type="button" [matMenuTriggerFor]="menu" [attr.aria-label]="'Actions for ' + inv.number"><mat-icon>more_vert</mat-icon></button>
+                <mat-menu #menu="matMenu" xPosition="before">
+                  <a mat-menu-item [routerLink]="['../invoices', inv.id]"><mat-icon>receipt_long</mat-icon> Open invoice</a>
+                  @if (isOpen(inv.status) && perms.canTakePayment()) {
+                    <button mat-menu-item type="button" (click)="takePayment(inv)"><mat-icon>payments</mat-icon> Take payment</button>
+                  }
+                  <a mat-menu-item [routerLink]="['../statements', inv.patientId]"><mat-icon>description</mat-icon> Patient statement</a>
+                </mat-menu>
+              </td>
+            </tr>
+          } @empty {
+            <tr><td colspan="7" class="inv__empty">No invoices yet.</td></tr>
+          }
+        </tbody>
+      </table>
+    </section>
+  }
+</div>

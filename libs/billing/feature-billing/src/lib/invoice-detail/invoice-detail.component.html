@@ -1,0 +1,132 @@
+@if (loadError()) {
+  <div class="idt__state" role="alert"><mat-icon>error_outline</mat-icon><p>{{ loadError() }}</p><a mat-stroked-button routerLink="/billing/invoices">Back to invoices</a></div>
+} @else if (invoice(); as inv) {
+  <div class="idt">
+    <header class="idt__header">
+      <div>
+        <a routerLink="/billing/invoices" class="idt__back"><mat-icon>arrow_back</mat-icon> Invoices</a>
+        <h1 class="idt__title">{{ inv.number }} <clv-status-chip [status]="inv.status" /></h1>
+        <p class="idt__meta">
+          <a [routerLink]="['/patients', inv.patientId, 'billing']">{{ inv.patientName }}</a> · {{ inv.patientMrn }} ·
+          {{ inv.providerName }} · service {{ inv.serviceDate | date:'MMM d, y' }}
+          @if (inv.encounterId && isClinical()) { · <a [routerLink]="['/encounters', inv.encounterId]">encounter note</a> }
+        </p>
+      </div>
+      <div class="idt__actions">
+        @if (isDraft() && perms.canManage()) {
+          <button mat-stroked-button type="button" [disabled]="busy() || lines.pristine" (click)="save()">Save draft</button>
+          <button mat-flat-button color="primary" type="button" [disabled]="busy()" (click)="issue()"><mat-icon>send</mat-icon> Issue invoice</button>
+        }
+        @if (isOpen() && perms.canTakePayment()) {
+          <button mat-flat-button color="primary" type="button" (click)="takePayment()"><mat-icon>payments</mat-icon> Take payment</button>
+        }
+        <button mat-stroked-button type="button" (click)="print()"><mat-icon>print</mat-icon> Print / PDF</button>
+        @if (perms.canManage() && inv.status !== 'VOIDED') {
+          <button mat-icon-button type="button" [matMenuTriggerFor]="more" aria-label="More actions"><mat-icon>more_vert</mat-icon></button>
+          <mat-menu #more="matMenu" xPosition="before">
+            @if (isOpen()) { <button mat-menu-item type="button" (click)="adjust()"><mat-icon>price_change</mat-icon> Apply adjustment</button> }
+            @if (canFileClaim()) { <button mat-menu-item type="button" (click)="fileClaim()"><mat-icon>assignment</mat-icon> File insurance claim</button> }
+            <a mat-menu-item [routerLink]="['/billing/statements', inv.patientId]"><mat-icon>description</mat-icon> Patient statement</a>
+            @if (inv.totalPaidCents === 0) { <button mat-menu-item type="button" class="danger" (click)="voidInvoice()"><mat-icon>block</mat-icon> Void invoice</button> }
+          </mat-menu>
+        }
+      </div>
+    </header>
+
+    @if (inv.voidedAt) {
+      <div class="idt__banner idt__banner--void"><mat-icon>block</mat-icon> Voided {{ inv.voidedAt | date:'MMM d, y' }} — {{ inv.voidReason }}</div>
+    }
+    @if (inv.notes) { <div class="idt__banner"><mat-icon>info</mat-icon> {{ inv.notes }}</div> }
+
+    <div class="idt__grid">
+      <section class="panel">
+        <h2 class="panel__title">Line items</h2>
+        <table class="lines">
+          <thead><tr><th>Code</th><th>Description</th><th class="num">Qty</th><th class="num">Unit price</th><th class="num">Total</th>@if (isDraft() && perms.canManage()) { <th></th> }</tr></thead>
+          <tbody>
+            @for (g of lines.controls; track g; let i = $index) {
+              <tr [formGroup]="g">
+                @if (isDraft() && perms.canManage()) {
+                  <td><input class="cell" formControlName="serviceCode" [attr.list]="'fee-codes'" (change)="codeChanged(i)" aria-label="Service code" /></td>
+                  <td><input class="cell cell--wide" formControlName="description" aria-label="Description" /></td>
+                  <td class="num"><input class="cell cell--num" type="number" min="1" formControlName="quantity" aria-label="Quantity" /></td>
+                  <td class="num"><input class="cell cell--num" type="number" min="0" step="0.01" formControlName="unitPrice" aria-label="Unit price" /></td>
+                  <td class="num">{{ lineTotal(i) | cents }}</td>
+                  <td><button mat-icon-button type="button" (click)="removeLine(i)" [attr.aria-label]="'Remove line ' + (i + 1)"><mat-icon>delete_outline</mat-icon></button></td>
+                } @else {
+                  @let v = g.getRawValue();
+                  <td class="mono">{{ v.serviceCode }}</td>
+                  <td>{{ v.description }}</td>
+                  <td class="num">{{ v.quantity }}</td>
+                  <td class="num">{{ (v.unitPrice ?? 0) * 100 | cents }}</td>
+                  <td class="num">{{ lineTotal(i) | cents }}</td>
+                }
+              </tr>
+            } @empty {
+              <tr><td colspan="6" class="empty">No line items yet.</td></tr>
+            }
+          </tbody>
+        </table>
+        <datalist id="fee-codes">
+          @for (f of feeLines(); track f.cptCode) { <option [value]="f.cptCode">{{ f.description }}</option> }
+        </datalist>
+        @if (isDraft() && perms.canManage()) {
+          <button mat-button type="button" class="add-line" (click)="addLine()"><mat-icon>add</mat-icon> Add line</button>
+        }
+
+        <dl class="totals">
+          <dt>Subtotal</dt><dd>{{ (isDraft() ? draftTotal() : inv.subtotalCents) | cents }}</dd>
+          @if (inv.totalAdjustmentsCents) { <dt>Adjustments</dt><dd>−{{ inv.totalAdjustmentsCents | cents }}</dd> }
+          @if (inv.totalPaidCents) { <dt>Payments</dt><dd>−{{ inv.totalPaidCents | cents }}</dd> }
+          <dt class="totals__balance">Balance due</dt><dd class="totals__balance">{{ (isDraft() ? draftTotal() : inv.balanceCents) | cents }}</dd>
+          @if (inv.dueDate) { <dt>Due date</dt><dd>{{ inv.dueDate | date:'MMM d, y' }}</dd> }
+        </dl>
+      </section>
+
+      <div class="idt__side">
+        <section class="panel">
+          <h2 class="panel__title">Payments</h2>
+          @for (p of inv.payments; track p.paymentId) {
+            <div class="item" [class.item--void]="p.voided">
+              <mat-icon>{{ p.method === 'INSURANCE' ? 'health_and_safety' : 'payments' }}</mat-icon>
+              <div class="item__body">
+                <strong>{{ p.amountCents | cents }}</strong> · {{ methodLabels[p.method] }}
+                <small>{{ p.processedAt | date:'MMM d, y h:mm a' }}@if (p.referenceNumber) { · {{ p.referenceNumber }} }@if (p.voided) { · voided }</small>
+              </div>
+              @if (!p.voided && perms.canManage() && p.method !== 'INSURANCE') {
+                <button mat-icon-button type="button" (click)="voidPayment(p)" matTooltip="Void payment" aria-label="Void payment"><mat-icon>undo</mat-icon></button>
+              }
+            </div>
+          } @empty { <p class="empty">No payments yet.</p> }
+        </section>
+
+        <section class="panel">
+          <h2 class="panel__title">Insurance claims</h2>
+          @for (c of inv.claims ?? []; track c.id) {
+            <div class="item">
+              <mat-icon>assignment</mat-icon>
+              <div class="item__body">
+                <strong>{{ c.payerName }}</strong> <clv-status-chip [status]="c.status" />
+                <small>Policy {{ c.policyNumber }}@if (c.paidAmountCents) { · paid {{ c.paidAmountCents | cents }} }@if (c.denialReason) { · {{ c.denialReason }} }</small>
+              </div>
+              @if (perms.canManage() && c.status !== 'PAID' && c.status !== 'VOIDED') {
+                <button mat-stroked-button type="button" (click)="updateClaim(c.id)">Update</button>
+              }
+            </div>
+          } @empty { <p class="empty">No claims filed.</p> }
+        </section>
+
+        <section class="panel">
+          <h2 class="panel__title">History</h2>
+          <ol class="history">
+            @for (h of history(); track $index) {
+              <li><mat-icon>{{ h.icon }}</mat-icon><span>{{ h.text }}<small>{{ h.at | date:'MMM d, y h:mm a' }}</small></span></li>
+            }
+          </ol>
+        </section>
+      </div>
+    </div>
+  </div>
+} @else {
+  <div class="idt__state"><mat-spinner diameter="36" /></div>
+}

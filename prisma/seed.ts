@@ -881,11 +881,33 @@ const patients = [
 // ─── appointment types ───────────────────────────────────────────────────────
 
 const APPOINTMENT_TYPES = [
-  { name: 'New Patient Visit',  defaultDurationMinutes: 45, bufferAfterMinutes: 0, color: '#1976D2' },
-  { name: 'Follow-Up Visit',    defaultDurationMinutes: 15, bufferAfterMinutes: 0, color: '#00897B' },
-  { name: 'Annual Physical',    defaultDurationMinutes: 60, bufferAfterMinutes: 0, color: '#388E3C' },
-  { name: 'Urgent Care',        defaultDurationMinutes: 30, bufferAfterMinutes: 0, color: '#D32F2F' },
-  { name: 'Procedure',          defaultDurationMinutes: 90, bufferAfterMinutes: 15, color: '#7B1FA2' },
+  { name: 'New Patient Visit',  defaultDurationMinutes: 45, bufferAfterMinutes: 0, color: '#1976D2', defaultServiceCode: '99203' },
+  { name: 'Follow-Up Visit',    defaultDurationMinutes: 15, bufferAfterMinutes: 0, color: '#00897B', defaultServiceCode: '99213' },
+  { name: 'Annual Physical',    defaultDurationMinutes: 60, bufferAfterMinutes: 0, color: '#388E3C', defaultServiceCode: '99396' },
+  { name: 'Urgent Care',        defaultDurationMinutes: 30, bufferAfterMinutes: 0, color: '#D32F2F', defaultServiceCode: '99214' },
+  { name: 'Procedure',          defaultDurationMinutes: 90, bufferAfterMinutes: 15, color: '#7B1FA2', defaultServiceCode: '10060' },
+];
+
+// Common CPT code numbers with plain-language descriptions written for this demo.
+// Official CPT descriptors are AMA-licensed; load them from the practice's licensed code set.
+const FEE_SCHEDULE_LINES = [
+  { cptCode: '10060', description: 'Incision and drainage of abscess, simple', priceCents: 21000 },
+  { cptCode: '36415', description: 'Routine venous blood draw', priceCents: 2500 },
+  { cptCode: '80053', description: 'Comprehensive metabolic panel', priceCents: 6000 },
+  { cptCode: '81002', description: 'Urinalysis, non-automated', priceCents: 2000 },
+  { cptCode: '85025', description: 'Complete blood count with differential', priceCents: 4500 },
+  { cptCode: '90471', description: 'Immunization administration, first vaccine', priceCents: 3500 },
+  { cptCode: '93000', description: 'Electrocardiogram with interpretation', priceCents: 7500 },
+  { cptCode: '94640', description: 'Nebulizer inhalation treatment', priceCents: 5500 },
+  { cptCode: '99202', description: 'New patient office visit — straightforward', priceCents: 11000 },
+  { cptCode: '99203', description: 'New patient office visit — low complexity', priceCents: 16500 },
+  { cptCode: '99204', description: 'New patient office visit — moderate complexity', priceCents: 24500 },
+  { cptCode: '99212', description: 'Established patient visit — straightforward', priceCents: 8500 },
+  { cptCode: '99213', description: 'Established patient visit — low complexity', priceCents: 13000 },
+  { cptCode: '99214', description: 'Established patient visit — moderate complexity', priceCents: 18500 },
+  { cptCode: '99215', description: 'Established patient visit — high complexity', priceCents: 25500 },
+  { cptCode: '99396', description: 'Preventive visit, established patient, age 40–64', priceCents: 24000 },
+  { cptCode: '99397', description: 'Preventive visit, established patient, age 65+', priceCents: 26000 },
 ];
 
 const STAFF_USERS = [
@@ -894,6 +916,7 @@ const STAFF_USERS = [
   { email: 'dr.patel@clinova.health',   password: 'Doctor@2026',     firstName: 'Ananya',  lastName: 'Patel',    role: 'PHYSICIAN' },
   { email: 'nurse.kim@clinova.health',  password: 'Nurse@2026',      firstName: 'Ji-Yeon', lastName: 'Kim',      role: 'NURSE' },
   { email: 'reception@clinova.health',  password: 'Staff@2026',      firstName: 'Marcus',  lastName: 'Grant',    role: 'STAFF' },
+  { email: 'billing@clinova.health',    password: 'Billing@2026',    firstName: 'Bianca',  lastName: 'Flores',   role: 'BILLING' },
 ];
 
 // ─── encounter templates & sample notes ────────────────────────────────────
@@ -1074,6 +1097,12 @@ const SAMPLE_ENCOUNTERS = [
 
 async function main() {
   console.log('🗑  Clearing existing data…');
+  await prisma.paymentAllocation.deleteMany({});
+  await prisma.payment.deleteMany({});
+  await prisma.insuranceClaim.deleteMany({});
+  await prisma.invoice.deleteMany({});
+  await prisma.feeSchedule.deleteMany({});
+  await prisma.counter.deleteMany({});
   await prisma.prescription.deleteMany({});
   await prisma.encounter.deleteMany({});
   await prisma.encounterTemplate.deleteMany({});
@@ -1274,6 +1303,8 @@ async function main() {
     },
   });
   console.log(`✅ Seeded ${historyCount + 1} historical visits (incl. today's no-show and an overdue unsigned note).`);
+
+  await seedBilling(chen.id, patel.id);
 }
 
 const ICD = (code: string, description: string) => ({ code, description });
@@ -1300,3 +1331,173 @@ const HISTORY_VISITS: Array<{
 main()
   .catch((e) => { console.error(e); process.exit(1); })
   .finally(() => prisma.$disconnect());
+
+// --- billing ---------------------------------------------------------------
+
+async function seedBilling(chenId: string, patelId: string) {
+  console.log('\n?? Seeding billing�\n');
+  const DAY = 86_400_000;
+  const now = Date.now();
+  const billingUser = await prisma.staff.findUniqueOrThrow({ where: { email: 'billing@clinova.health' } });
+  const frontDesk = await prisma.staff.findUniqueOrThrow({ where: { email: 'reception@clinova.health' } });
+
+  await prisma.feeSchedule.create({
+    data: {
+      name: 'Standard 2026', description: 'Practice default fee schedule', isDefault: true,
+      effectiveDate: new Date('2026-01-01'), linesJson: JSON.stringify(FEE_SCHEDULE_LINES),
+    },
+  });
+  await prisma.feeSchedule.create({
+    data: {
+      name: 'Self-pay discount', description: '30% prompt-pay discount for uninsured patients',
+      effectiveDate: new Date('2026-01-01'),
+      linesJson: JSON.stringify(FEE_SCHEDULE_LINES.map(l => ({ ...l, priceCents: Math.round((l.priceCents * 0.7) / 100) * 100 }))),
+    },
+  });
+  const fee = (code: string) => {
+    const line = FEE_SCHEDULE_LINES.find(l => l.cptCode === code);
+    if (!line) throw new Error(`Fee schedule is missing ${code}`);
+    return line;
+  };
+
+  type Visit = { patientId: string; providerId: string; encounterId: string | null; serviceDate: Date; codes: string[] };
+  const visits: Visit[] = [];
+
+  // Signed encounters bill their appointment type's default code.
+  const signed = await prisma.encounter.findMany({ where: { status: { in: ['SIGNED', 'AMENDED'] }, appointmentId: { not: null } } });
+  for (const enc of signed) {
+    const appt = await prisma.appointment.findUniqueOrThrow({ where: { id: enc.appointmentId as string }, include: { appointmentType: true } });
+    visits.push({
+      patientId: enc.patientId, providerId: enc.providerId, encounterId: enc.id, serviceDate: appt.slotStart,
+      codes: [appt.appointmentType.defaultServiceCode ?? '99213'],
+    });
+  }
+
+  // Five months of earlier visits (billing history only) for revenue trend and aging.
+  const patients = await prisma.patient.findMany({ take: 12, orderBy: { createdAt: 'asc' }, select: { id: true } });
+  const CODE_SETS = [['99213'], ['99214', '36415', '85025'], ['99396'], ['99212'], ['99213', '93000']];
+  for (let m = 1; m <= 5; m++) {
+    const visitsThisMonth = 4 + ((m * 7) % 4);
+    for (let k = 0; k < visitsThisMonth; k++) {
+      visits.push({
+        patientId: patients[(m * 5 + k) % patients.length].id,
+        providerId: (m + k) % 2 ? chenId : patelId,
+        encounterId: null,
+        serviceDate: new Date(now - (m * 30 + k * 4 + 2) * DAY),
+        codes: CODE_SETS[(m * 3 + k) % CODE_SETS.length],
+      });
+    }
+  }
+  visits.sort((a, b) => a.serviceDate.getTime() - b.serviceDate.getTime());
+
+  const policiesByPatient = new Map(
+    (await prisma.patient.findMany({ select: { id: true, insurancePoliciesJson: true } }))
+      .map(p => [p.id, JSON.parse(p.insurancePoliciesJson) as Array<{ id: string; isPrimary: boolean; provider: string; policyNumber: string; copayAmountCents: number | null }>]),
+  );
+
+  let seq = 0;
+  let paymentRef = 4000;
+  const balances = new Map<string, number>();
+
+  async function pay(patientId: string, invoiceId: string, amountCents: number, at: Date, method: string, processedBy: string, reference?: string) {
+    if (amountCents <= 0) return;
+    await prisma.payment.create({
+      data: {
+        patientId, amountCents, method, processedBy, processedAt: at,
+        referenceNumber: reference ?? (method === 'CREDIT_CARD' || method === 'DEBIT_CARD' ? `AUTH-${++paymentRef}` : null),
+        checkNumber: method === 'CHECK' ? String(1000 + ++paymentRef) : null,
+        allocations: { create: [{ invoiceId, amountCents }] },
+      },
+    });
+    balances.set(invoiceId, (balances.get(invoiceId) ?? 0) - amountCents);
+  }
+
+  for (const [i, v] of visits.entries()) {
+    const ageDays = (now - v.serviceDate.getTime()) / DAY;
+    const lines = v.codes.map(code => {
+      const f = fee(code);
+      return { id: randomUUID(), serviceCode: code, description: f.description, quantity: 1, unitPriceCents: f.priceCents, totalCents: f.priceCents, notes: null };
+    });
+    const subtotal = lines.reduce((s, l) => s + l.totalCents, 0);
+    const isDraft = ageDays < 2 && v.encounterId !== null;
+    const issuedAt = isDraft ? null : new Date(Math.min(v.serviceDate.getTime() + DAY, now - 3_600_000));
+    const adjustments: unknown[] = [];
+
+    const invoice = await prisma.invoice.create({
+      data: {
+        number: `INV-${String(++seq).padStart(6, '0')}`,
+        patientId: v.patientId, providerId: v.providerId, encounterId: v.encounterId,
+        serviceDate: v.serviceDate, issuedAt, dueDate: issuedAt ? new Date(issuedAt.getTime() + 30 * DAY) : null,
+        linesJson: JSON.stringify(lines),
+      },
+    });
+    balances.set(invoice.id, subtotal);
+    if (!issuedAt) continue;
+
+    const primary = (policiesByPatient.get(v.patientId) ?? []).find(p => p.isPrimary);
+    const copay = primary?.copayAmountCents ?? 0;
+
+    if (primary) {
+      const status = ageDays > 40 ? (i % 7 === 3 ? 'DENIED' : 'PAID') : ageDays > 20 ? 'PENDING' : ageDays > 7 ? 'SUBMITTED' : 'DRAFT';
+      const submittedAt = status === 'DRAFT' ? null : new Date(issuedAt.getTime() + 2 * DAY);
+      let paymentId: string | null = null;
+      let paidAmountCents: number | null = null;
+
+      if (copay > 0) await pay(v.patientId, invoice.id, Math.min(copay, subtotal), v.serviceDate, i % 2 ? 'CREDIT_CARD' : 'CASH', frontDesk.id);
+
+      if (status === 'PAID') {
+        const remaining = balances.get(invoice.id) ?? 0;
+        paidAmountCents = Math.round(remaining * 0.7);
+        const paidAt = new Date(issuedAt.getTime() + 24 * DAY);
+        const p = await prisma.payment.create({
+          data: {
+            patientId: v.patientId, amountCents: paidAmountCents, method: 'INSURANCE', referenceNumber: primary.provider,
+            processedBy: billingUser.id, processedAt: paidAt,
+            allocations: { create: [{ invoiceId: invoice.id, amountCents: paidAmountCents }] },
+          },
+        });
+        paymentId = p.id;
+        balances.set(invoice.id, remaining - paidAmountCents);
+        const writeDown = Math.round(remaining * 0.15);
+        adjustments.push({
+          id: randomUUID(), type: 'INSURANCE_CONTRACTUAL', amountCents: writeDown, reason: `${primary.provider} contractual adjustment`,
+          appliedBy: billingUser.id, appliedAt: paidAt.toISOString(),
+        });
+        balances.set(invoice.id, (balances.get(invoice.id) ?? 0) - writeDown);
+        // Most patients settle the remainder; a few are left overdue.
+        if (i % 5 !== 0) await pay(v.patientId, invoice.id, balances.get(invoice.id) ?? 0, new Date(paidAt.getTime() + 10 * DAY), i % 3 ? 'CREDIT_CARD' : 'CHECK', billingUser.id);
+      }
+
+      await prisma.insuranceClaim.create({
+        data: {
+          invoiceId: invoice.id, patientId: v.patientId, insurancePolicyId: primary.id, payerName: primary.provider,
+          policyNumber: primary.policyNumber, billedCents: subtotal, status, submittedAt, paymentId, paidAmountCents,
+          paidAt: status === 'PAID' ? new Date(issuedAt.getTime() + 24 * DAY) : null,
+          denialReason: status === 'DENIED' ? 'Missing prior authorization' : null,
+        },
+      });
+    } else if (ageDays > 40) {
+      // Self-pay: usually paid in full; occasionally left unpaid (ages into 90+).
+      if (i % 4 !== 0) await pay(v.patientId, invoice.id, subtotal, new Date(issuedAt.getTime() + 7 * DAY), 'DEBIT_CARD', frontDesk.id);
+    } else if (i % 2 === 0) {
+      await pay(v.patientId, invoice.id, Math.round(subtotal / 2), v.serviceDate, 'CREDIT_CARD', frontDesk.id);
+    }
+
+    if (adjustments.length) {
+      await prisma.invoice.update({ where: { id: invoice.id }, data: { adjustmentsJson: JSON.stringify(adjustments) } });
+    }
+  }
+
+  // A couple of balance payments taken at the front desk today.
+  const open = [...balances.entries()].filter(([, b]) => b > 0).slice(0, 2);
+  for (const [j, [invoiceId, balance]] of open.entries()) {
+    const inv = await prisma.invoice.findUniqueOrThrow({ where: { id: invoiceId } });
+    if (!inv.issuedAt) continue;
+    await pay(inv.patientId, invoiceId, Math.min(balance, 5000), new Date(now - (j + 1) * 45 * 60_000), j ? 'CASH' : 'CREDIT_CARD', frontDesk.id);
+  }
+
+  await prisma.counter.upsert({ where: { name: 'invoice' }, create: { name: 'invoice', value: seq }, update: { value: seq } });
+  const claimCount = await prisma.insuranceClaim.count();
+  const paymentCount = await prisma.payment.count();
+  console.log(`? Seeded 2 fee schedules, ${seq} invoices, ${paymentCount} payments, ${claimCount} claims.`);
+}

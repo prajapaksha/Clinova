@@ -4,6 +4,7 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
 import type {
   Encounter as EncounterRow,
@@ -11,11 +12,13 @@ import type {
   Prescription as PrescriptionRow,
 } from '@prisma/client';
 import type {
+  CPTCode,
   DrugCatalogEntry,
   DrugDose,
   Encounter,
   EncounterAddendum,
   EncounterId,
+  EncounterSignedEvent,
   EncounterTemplate,
   Prescription,
   PrescriptionId,
@@ -32,6 +35,7 @@ import {
   signingBlockers,
 } from '@clinova/clinical/domain';
 import { PrismaService } from '../prisma/prisma.service';
+import { DomainEventBus } from '../events/domain-event-bus';
 import type { AuthUser } from '../auth/auth.service';
 import {
   CreateTemplateDto,
@@ -82,7 +86,10 @@ export function mergeNote(base: SoapNote, patch: NotePatchDto | Partial<SoapNote
 export class EncountersService {
   private icd10Usage: { counts: Map<string, number>; at: number } | null = null;
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Optional() private readonly events?: DomainEventBus,
+  ) {}
 
   // ── Queries ────────────────────────────────────────────────────────────────
 
@@ -236,6 +243,17 @@ export class EncountersService {
         });
       }
     });
+
+    const signedEvent: EncounterSignedEvent = {
+      type: 'clinical.EncounterSigned',
+      encounterId: id as EncounterId,
+      patientId: row.patientId,
+      providerId: row.providerId,
+      diagnoses: diagnoses.map(d => d.code),
+      serviceCodes: JSON.parse(row.serviceCodesJson) as CPTCode[],
+      timestamp: now,
+    };
+    this.events?.publish(signedEvent);
 
     return this.findById(id);
   }

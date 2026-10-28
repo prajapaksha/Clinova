@@ -73,6 +73,8 @@ model AppointmentType {
   defaultDurationMinutes Int           @default(30)
   bufferAfterMinutes     Int           @default(0)
   color                  String        @default("#1976D2")
+  /// Fee-schedule code billed for this visit type when the encounter has no service codes.
+  defaultServiceCode     String?
   isActive               Boolean       @default(true)
   createdAt              DateTime      @default(now())
   updatedAt              DateTime      @updatedAt
@@ -164,4 +166,104 @@ model EncounterTemplate {
   isActive            Boolean  @default(true)
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
+}
+
+model FeeSchedule {
+  id            String   @id @default(cuid())
+  name          String
+  description   String?
+  linesJson     String   @default("[]")
+  isDefault     Boolean  @default(false)
+  isActive      Boolean  @default(true)
+  effectiveDate DateTime @default(now())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Invoice {
+  id              String    @id @default(cuid())
+  number          String    @unique
+  patientId       String
+  encounterId     String?   @unique
+  providerId      String
+  feeScheduleId   String?
+  linesJson       String    @default("[]")
+  adjustmentsJson String    @default("[]")
+  serviceDate     DateTime
+  issuedAt        DateTime?
+  dueDate         DateTime?
+  voidedAt        DateTime?
+  voidReason      String?
+  notes           String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  allocations PaymentAllocation[]
+  claims      InsuranceClaim[]
+
+  @@index([patientId])
+  @@index([issuedAt])
+}
+
+model Payment {
+  id              String    @id @default(cuid())
+  patientId       String
+  amountCents     Int
+  method          String
+  referenceNumber String?
+  checkNumber     String?
+  processedBy     String
+  processedAt     DateTime  @default(now())
+  receiptSentTo   String?
+  voidedAt        DateTime?
+  voidReason      String?
+
+  allocations PaymentAllocation[]
+
+  @@index([patientId])
+  @@index([processedAt])
+}
+
+model PaymentAllocation {
+  id          String @id @default(cuid())
+  paymentId   String
+  invoiceId   String
+  amountCents Int
+
+  payment Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  invoice Invoice @relation(fields: [invoiceId], references: [id])
+
+  @@index([paymentId])
+  @@index([invoiceId])
+}
+
+model InsuranceClaim {
+  id                String    @id @default(cuid())
+  invoiceId         String
+  patientId         String
+  insurancePolicyId String
+  payerName         String
+  policyNumber      String
+  billedCents       Int
+  status            String    @default("DRAFT")
+  submittedAt       DateTime?
+  paidAt            DateTime?
+  paidAmountCents   Int?
+  denialReason      String?
+  appealNote        String?
+  /// Insurance payment recorded when the claim was marked paid.
+  paymentId         String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id])
+
+  @@index([invoiceId])
+  @@index([status])
+}
+
+/// Named monotonic counters (e.g. invoice numbers).
+model Counter {
+  name  String @id
+  value Int    @default(0)
 }

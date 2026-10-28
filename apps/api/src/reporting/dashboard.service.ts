@@ -15,6 +15,7 @@ import {
 } from '@clinova/reporting/domain';
 import { PrismaService } from '../prisma/prisma.service';
 import type { AuthUser } from '../auth/auth.service';
+import { LocalClock } from '../common/local-clock';
 
 export interface DashboardQuery {
   /** Local calendar date, YYYY-MM-DD. */
@@ -34,36 +35,6 @@ interface PatientFlags {
   name: string;
   mrn: string;
   criticalMessages: string[];
-}
-
-/** Converts between UTC instants and the client's local wall clock using a fixed offset. */
-class LocalClock {
-  constructor(private readonly offsetMinutes: number) {}
-
-  /** UTC instant of local midnight for a YYYY-MM-DD date. */
-  midnight(date: string): Date {
-    const [y, m, d] = date.split('-').map(Number);
-    return new Date(Date.UTC(y, m - 1, d) + this.offsetMinutes * 60_000);
-  }
-
-  private shifted(instant: Date): Date {
-    return new Date(instant.getTime() - this.offsetMinutes * 60_000);
-  }
-
-  dateKey(instant: Date): string {
-    return this.shifted(instant).toISOString().slice(0, 10);
-  }
-
-  hour(instant: Date): number {
-    return this.shifted(instant).getUTCHours();
-  }
-
-  time(instant: Date): string {
-    const local = this.shifted(instant);
-    const h = local.getUTCHours();
-    const m = String(local.getUTCMinutes()).padStart(2, '0');
-    return `${h % 12 === 0 ? 12 : h % 12}:${m} ${h >= 12 ? 'PM' : 'AM'}`;
-  }
 }
 
 @Injectable()

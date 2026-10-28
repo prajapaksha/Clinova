@@ -82,5 +82,22 @@
 
   &__empty-icon { font-size: 48px !important; width: 48px; height: 48px; opacity: 0.3; }
 
-  &__hint { font-size: 0.875rem; }
+  
 }
+
+.bil__kpi-sub { font-size: 0.78rem; color: var(--clv-gray-600); }
+.bil__kpi-value--credit { color: var(--clv-success-text); }
+.bil__actions { display: flex; align-items: center; gap: 8px; }
+.bil__loading { display: flex; justify-content: center; padding: 32px; }
+.bil__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  background: #fff;
+  border: 1px solid var(--clv-gray-200);
+  border-radius: 8px;
+  th { padding: 8px 12px; text-align: left; font-size: 0.72rem; text-transform: uppercase; color: var(--clv-gray-600); background: var(--clv-gray-50); }
+  td { padding: 8px 12px; border-top: 1px solid var(--clv-gray-100); }
+  .num { text-align: right; white-space: nowrap; }
+}
+.bil__mono { font-family: 'Roboto Mono', ui-monospace, monospace; color: var(--clv-primary-700); }

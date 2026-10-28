@@ -1,63 +1,98 @@
 @if (patient(); as p) {
   <div class="bil">
+    @if (!canView()) {
+      <div class="bil__empty">
+        <mat-icon class="bil__empty-icon">lock</mat-icon>
+        <p>Billing information is not available for your role.</p>
+      </div>
+    } @else {
+      <div class="bil__summary-row">
+        <mat-card class="bil__kpi-card">
+          <mat-card-content>
+            <div class="bil__kpi-label">Current balance</div>
+            <div class="bil__kpi-value">{{ balance() | cents }}</div>
+          </mat-card-content>
+        </mat-card>
+        <mat-card class="bil__kpi-card" [class.bil__kpi-card--warn]="overdue() > 0">
+          <mat-card-content>
+            <div class="bil__kpi-label">Overdue</div>
+            <div class="bil__kpi-value">{{ overdue() | cents }}</div>
+          </mat-card-content>
+        </mat-card>
+        <mat-card class="bil__kpi-card">
+          <mat-card-content>
+            <div class="bil__kpi-label">Last payment</div>
+            @if (lastPayment(); as lp) {
+              <div class="bil__kpi-value">{{ lp.amountCents | cents }}</div>
+              <div class="bil__kpi-sub">{{ lp.processedAt | date:'MMM d, y' }}</div>
+            } @else {
+              <div class="bil__kpi-value">—</div>
+            }
+          </mat-card-content>
+        </mat-card>
+        @if (credit() > 0) {
+          <mat-card class="bil__kpi-card">
+            <mat-card-content>
+              <div class="bil__kpi-label">Account credit</div>
+              <div class="bil__kpi-value bil__kpi-value--credit">{{ credit() | cents }}</div>
+            </mat-card-content>
+          </mat-card>
+        }
+      </div>
 
-    <!-- Balance Summary -->
-    <div class="bil__summary-row">
-      <mat-card class="bil__kpi-card">
-        <mat-card-content>
-          <div class="bil__kpi-label">Current Balance</div>
-          <div class="bil__kpi-value">$0.00</div>
-        </mat-card-content>
-      </mat-card>
-      <mat-card class="bil__kpi-card bil__kpi-card--warn">
-        <mat-card-content>
-          <div class="bil__kpi-label">Overdue</div>
-          <div class="bil__kpi-value">$0.00</div>
-        </mat-card-content>
-      </mat-card>
-      <mat-card class="bil__kpi-card">
-        <mat-card-content>
-          <div class="bil__kpi-label">Last Payment</div>
-          <div class="bil__kpi-value">—</div>
-        </mat-card-content>
-      </mat-card>
-    </div>
-
-    <!-- Insurance -->
-    @if (p.insurancePolicies.length) {
-      <mat-card class="bil__card">
-        <mat-card-header>
-          <mat-card-title class="bil__card-title">
-            <mat-icon>health_and_safety</mat-icon>Insurance on File
-          </mat-card-title>
-        </mat-card-header>
-        <mat-card-content>
-          @for (ins of p.insurancePolicies; track ins.id) {
-            <div class="bil__ins-row">
-              <div>
-                <strong>{{ ins.provider }}</strong>
-                <span class="bil__badge">{{ ins.isPrimary ? 'Primary' : 'Secondary' }}</span>
+      @if (p.insurancePolicies.length) {
+        <mat-card class="bil__card">
+          <mat-card-header>
+            <mat-card-title class="bil__card-title"><mat-icon>health_and_safety</mat-icon>Insurance on file</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            @for (ins of p.insurancePolicies; track ins.id) {
+              <div class="bil__ins-row">
+                <div><strong>{{ ins.provider }}</strong><span class="bil__badge">{{ ins.isPrimary ? 'Primary' : 'Secondary' }}</span></div>
+                <div class="bil__ins-meta">Policy {{ ins.policyNumber }}</div>
               </div>
-              <div class="bil__ins-meta">Policy {{ ins.policyNumber }}</div>
-            </div>
+            }
+          </mat-card-content>
+        </mat-card>
+      }
+
+      <div class="bil__inv-header">
+        <h2 class="bil__section-title">Invoices</h2>
+        <div class="bil__actions">
+          <a mat-button [routerLink]="['/billing/statements', p.id]"><mat-icon>description</mat-icon> Statement</a>
+          @if (canManage()) {
+            <a mat-stroked-button routerLink="/billing/invoices/new" [queryParams]="{ patientId: p.id }"><mat-icon>add</mat-icon> New invoice</a>
           }
-        </mat-card-content>
-      </mat-card>
+          @if (canTakePayment()) {
+            <button mat-flat-button color="primary" type="button" (click)="takePayment()"><mat-icon>payments</mat-icon> Take payment</button>
+          }
+        </div>
+      </div>
+
+      @if (loading()) {
+        <div class="bil__loading"><mat-spinner diameter="28" /></div>
+      } @else if (invoices().length === 0) {
+        <div class="bil__empty">
+          <mat-icon class="bil__empty-icon">receipt_long</mat-icon>
+          <p>No invoices on record.</p>
+        </div>
+      } @else {
+        <table class="bil__table">
+          <thead><tr><th>Invoice</th><th>Service date</th><th>Provider</th><th>Status</th><th class="num">Total</th><th class="num">Balance</th></tr></thead>
+          <tbody>
+            @for (inv of invoices(); track inv.id) {
+              <tr>
+                <td><a [routerLink]="['/billing/invoices', inv.id]" class="bil__mono">{{ inv.number }}</a></td>
+                <td>{{ inv.serviceDate | date:'MMM d, y' }}</td>
+                <td>{{ inv.providerName }}</td>
+                <td><clv-status-chip [status]="inv.status" /></td>
+                <td class="num">{{ inv.subtotalCents | cents }}</td>
+                <td class="num"><strong>{{ inv.balanceCents | cents }}</strong></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
     }
-
-    <!-- Invoices -->
-    <div class="bil__inv-header">
-      <h2 class="bil__section-title">Invoices</h2>
-      <button mat-stroked-button>
-        <mat-icon>add</mat-icon> New Invoice
-      </button>
-    </div>
-
-    <div class="bil__empty">
-      <mat-icon class="bil__empty-icon">receipt_long</mat-icon>
-      <p>No invoices on record.</p>
-      <p class="bil__hint">Billing data will appear once the billing module is connected.</p>
-    </div>
-
   </div>
 }
