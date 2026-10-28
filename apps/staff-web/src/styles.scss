@@ -102,3 +102,14 @@ html, body {
   outline: 2px solid var(--clv-primary-700);
   outline-offset: 2px;
 }
+
+// Print only the page content (e.g. dashboard "Export PDF").
+@media print {
+  .shell-sidebar,
+  .shell-topbar { display: none !important; }
+
+  .shell-content { margin-left: 0 !important; }
+
+  body { background: #fff; }
+}
+

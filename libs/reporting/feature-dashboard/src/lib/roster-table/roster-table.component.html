@@ -1,0 +1,74 @@
+<section class="panel" aria-labelledby="roster-title">
+  <header class="panel__header">
+    <h2 id="roster-title" class="panel__title">Today's roster</h2>
+    <a mat-button routerLink="/calendar">View full schedule <mat-icon iconPositionEnd>arrow_forward</mat-icon></a>
+  </header>
+
+  @if (entries().length === 0) {
+    <div class="roster__empty">
+      <mat-icon>event_busy</mat-icon>
+      <p>No appointments scheduled today.</p>
+    </div>
+  } @else {
+    <table class="roster">
+      <thead>
+        <tr>
+          <th scope="col">Time</th>
+          <th scope="col">Patient</th>
+          @if (showProvider()) { <th scope="col">Provider</th> }
+          <th scope="col">Status</th>
+          <th scope="col"><span class="visually-hidden">Actions</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (e of entries(); track e.appointmentId) {
+          <tr [class.roster__row--done]="e.status === 'COMPLETED' || e.status === 'NO_SHOW'">
+            <td class="roster__time">
+              {{ e.start | date:'h:mm a' }}
+              <span class="roster__type" [style.border-color]="e.typeColor">{{ e.typeName }}</span>
+            </td>
+            <td>
+              <a class="roster__patient" [routerLink]="['/patients', e.patientId, 'summary']">
+                <span class="roster__avatar" aria-hidden="true">{{ initials(e.patientName) }}</span>
+                <span>
+                  <strong>{{ e.patientName }}</strong>
+                  @if (e.hasCriticalAlert) {
+                    <mat-icon class="roster__alert" matTooltip="Critical patient alert" aria-label="Critical patient alert">warning</mat-icon>
+                  }
+                  @if (e.reasonForVisit) { <small>{{ e.reasonForVisit }}</small> }
+                </span>
+              </a>
+            </td>
+            @if (showProvider()) { <td>{{ e.providerName }}</td> }
+            <td><span class="roster__status" [attr.data-status]="e.status">{{ statusLabel(e.status) }}</span></td>
+            <td class="roster__actions">
+              <button mat-icon-button type="button" [matMenuTriggerFor]="menu"
+                      [attr.aria-label]="'Actions for ' + e.patientName">
+                <mat-icon>more_vert</mat-icon>
+              </button>
+              <mat-menu #menu="matMenu" xPosition="before">
+                @if (canCheckIn(e)) {
+                  <button mat-menu-item type="button" (click)="emit('check-in', e)"><mat-icon>how_to_reg</mat-icon> Check in</button>
+                }
+                @if (isClinical() && e.status === 'CHECKED_IN') {
+                  <a mat-menu-item routerLink="/encounters/new" [queryParams]="{ appointmentId: e.appointmentId, patientId: e.patientId }">
+                    <mat-icon>play_arrow</mat-icon> Begin encounter
+                  </a>
+                }
+                @if (isClinical() && e.status === 'IN_PROGRESS') {
+                  <a mat-menu-item routerLink="/encounters/new" [queryParams]="{ appointmentId: e.appointmentId, patientId: e.patientId }">
+                    <mat-icon>edit_note</mat-icon> Open encounter
+                  </a>
+                }
+                <a mat-menu-item [routerLink]="['/patients', e.patientId, 'summary']"><mat-icon>folder_shared</mat-icon> Open chart</a>
+                @if (canMarkNoShow(e)) {
+                  <button mat-menu-item type="button" (click)="emit('no-show', e)"><mat-icon>person_off</mat-icon> Mark no-show</button>
+                }
+              </mat-menu>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+</section>

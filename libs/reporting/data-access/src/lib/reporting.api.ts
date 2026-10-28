@@ -5,8 +5,14 @@ import type {
   KpiSummary, DailyScheduleReport, RevenueReport,
   ArAgingReport, AppointmentAnalyticsReport,
   ProviderProductivityReport, OutstandingTasksReport,
-  ReportFilter, ExportFormat,
+  ReportFilter, ExportFormat, DashboardSummary,
 } from '@clinova/reporting/domain';
+
+/** Formats a Date as the browser's local calendar date (YYYY-MM-DD). */
+export function toLocalDateKey(date: Date): string {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
 
 function filterToParams(filter: ReportFilter): Record<string, string> {
   const p: Record<string, string> = {
@@ -22,6 +28,16 @@ function filterToParams(filter: ReportFilter): Record<string, string> {
 @Injectable({ providedIn: 'root' })
 export class ReportingApiService {
   private readonly http = inject(HttpClient);
+
+  /** Staff home dashboard for the browser's local day. */
+  getDashboard(date: Date, providerId?: string): Observable<DashboardSummary> {
+    const params: Record<string, string> = {
+      date: toLocalDateKey(date),
+      tzOffset: String(date.getTimezoneOffset()),
+    };
+    if (providerId) params['providerId'] = providerId;
+    return this.http.get<DashboardSummary>('/api/dashboard', { params });
+  }
 
   getKpiSummary(): Observable<KpiSummary> {
     return this.http.get<KpiSummary>('/api/reports/kpi');

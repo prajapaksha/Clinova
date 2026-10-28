@@ -10,7 +10,7 @@ export const appRoutes: Route[] = [
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
       {
         path: 'dashboard',
-        loadChildren: () => import('@clinova/shared/feature-dashboard').then(m => m.DASHBOARD_ROUTES),
+        loadChildren: () => import('@clinova/reporting/feature-dashboard').then(m => m.DASHBOARD_ROUTES),
       },
       {
         path: 'calendar',

@@ -1,0 +1,117 @@
+<div class="dash">
+  <header class="dash__header">
+    <div>
+      <p class="dash__greeting">{{ greeting() }}</p>
+      <h1 class="dash__title">{{ scope() === 'mine' ? 'My Day' : 'Practice Overview' }}</h1>
+      <p class="dash__date">{{ today() | date:'EEEE, MMMM d, y' }}</p>
+    </div>
+    <div class="dash__actions">
+      @if (isPhysician()) {
+        <mat-button-toggle-group [value]="scope()" (change)="setScope($event.value)" aria-label="Dashboard scope" hideSingleSelectionIndicator>
+          <mat-button-toggle value="mine">My schedule</mat-button-toggle>
+          <mat-button-toggle value="practice">Whole practice</mat-button-toggle>
+        </mat-button-toggle-group>
+      }
+      <button mat-stroked-button type="button" (click)="print()">
+        <mat-icon>file_download</mat-icon> Export PDF
+      </button>
+      <button mat-stroked-button type="button" (click)="refresh()" [disabled]="loading()">
+        <mat-icon>refresh</mat-icon> Sync data
+      </button>
+    </div>
+  </header>
+
+  <div class="dash__progress">
+    @if (loading()) { <mat-progress-bar mode="indeterminate" /> }
+  </div>
+
+  @if (error() && !summary()) {
+    <div class="dash__error" role="alert">
+      <mat-icon>cloud_off</mat-icon>
+      <p>The dashboard could not be loaded.</p>
+      <button mat-stroked-button type="button" (click)="refresh()">Try again</button>
+    </div>
+  }
+
+  @if (summary(); as s) {
+    <!-- KPI tiles -->
+    <section class="kpis" aria-label="Key metrics">
+      <article class="kpi">
+        <div class="kpi__top">
+          <span class="kpi__icon"><mat-icon>event_available</mat-icon></span>
+          @if (appointmentTrend(); as t) {
+            <span class="kpi__badge" [class.kpi__badge--up]="t > 0" [class.kpi__badge--down]="t < 0"
+                  [matTooltip]="s.kpis.appointmentsLastWeek + ' on the same day last week'">
+              {{ t > 0 ? '+' : '' }}{{ t }}%
+            </span>
+          }
+        </div>
+        <p class="kpi__label">Appointments today</p>
+        <p class="kpi__value">{{ s.kpis.appointmentsToday }}</p>
+        <p class="kpi__sub">vs. {{ s.kpis.appointmentsLastWeek }} on the same day last week</p>
+      </article>
+
+      <article class="kpi">
+        <div class="kpi__top">
+          <span class="kpi__icon"><mat-icon>how_to_reg</mat-icon></span>
+          @if (checkInRate() !== null) {
+            <span class="kpi__badge">{{ checkInRate() | percent:'1.0-0' }}</span>
+          }
+        </div>
+        <p class="kpi__label">Patient check-ins</p>
+        <p class="kpi__value">{{ s.kpis.arrived }}<span class="kpi__of">/{{ s.kpis.appointmentsToday }}</span></p>
+        <p class="kpi__sub">{{ s.kpis.waitingNow }} waiting now</p>
+      </article>
+
+      @if (s.kpis.unsignedNotes !== null) {
+        <a class="kpi kpi--link" routerLink="/encounters">
+          <div class="kpi__top">
+            <span class="kpi__icon"><mat-icon>edit_note</mat-icon></span>
+            @if (s.kpis.unsignedOverdue) {
+              <span class="kpi__badge kpi__badge--urgent">Urgent</span>
+            }
+          </div>
+          <p class="kpi__label">Unsigned notes</p>
+          <p class="kpi__value">{{ s.kpis.unsignedNotes | number:'2.0-0' }}</p>
+          <p class="kpi__sub">{{ s.kpis.unsignedOverdue }} older than 24 hours</p>
+        </a>
+      } @else {
+        <article class="kpi">
+          <div class="kpi__top">
+            <span class="kpi__icon"><mat-icon>person_off</mat-icon></span>
+          </div>
+          <p class="kpi__label">No-shows today</p>
+          <p class="kpi__value">{{ s.kpis.noShowsToday }}</p>
+          <p class="kpi__sub">Follow up to reschedule</p>
+        </article>
+      }
+
+      <article class="kpi">
+        <div class="kpi__top">
+          <span class="kpi__icon"><mat-icon>trending_down</mat-icon></span>
+          @if (s.kpis.noShowRate30d !== null) {
+            <span class="kpi__badge"
+                  [class.kpi__badge--up]="s.kpis.noShowRate30d <= noShowTarget"
+                  [class.kpi__badge--urgent]="s.kpis.noShowRate30d > noShowTarget">
+              {{ s.kpis.noShowRate30d <= noShowTarget ? 'On target' : 'Above target' }}
+            </span>
+          }
+        </div>
+        <p class="kpi__label">No-show rate (30 days)</p>
+        <p class="kpi__value">{{ s.kpis.noShowRate30d === null ? '—' : (s.kpis.noShowRate30d | percent:'1.0-1') }}</p>
+        <p class="kpi__sub">Target below {{ noShowTarget | percent }}</p>
+      </article>
+    </section>
+
+    <div class="dash__grid">
+      <clv-roster-table class="dash__roster" [entries]="s.roster" [isClinical]="isClinical()"
+                        [showProvider]="s.scope === 'PRACTICE'" (action)="onRosterAction($event)" />
+      <div class="dash__side">
+        <clv-alerts-panel [alerts]="s.alerts" />
+        <clv-weekly-volume [days]="s.weeklyVolume" [peakHours]="s.peakHours" [today]="s.date" />
+      </div>
+    </div>
+
+    <p class="dash__updated">Updated {{ s.generatedAt | date:'h:mm a' }} · refreshes every minute</p>
+  }
+</div>

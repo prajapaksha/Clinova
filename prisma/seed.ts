@@ -1218,7 +1218,84 @@ async function main() {
     console.log(`  ✓ [${enc.status}]  ${sample.note.subjective.chiefComplaint}`);
   }
   console.log(`\n✅ Seeded ${ENCOUNTER_TEMPLATES.length} templates and ${completed.length} encounters.`);
+
+  // ─── visit history (dashboard KPIs, weekly volume, no-show rate) ─────────
+  console.log('\n🗂  Seeding visit history…\n');
+  let historyCount = 0;
+  for (const h of HISTORY_VISITS) {
+    const provider = h.provider === 'chen' ? chen : patel;
+    const { slotStart, slotEnd } = slot(h.day, h.hour, 0, 30);
+    const checkedInAt = new Date(slotStart.getTime() - 5 * 60_000);
+    const appt = await prisma.appointment.create({
+      data: {
+        patientId: allPatients[h.patient].id,
+        providerId: provider.id,
+        appointmentTypeId: typeMap[h.type],
+        slotStart,
+        slotEnd,
+        status: h.status,
+        reasonForVisit: h.chiefComplaint,
+        ...(h.status === 'COMPLETED' || h.status === 'IN_PROGRESS' ? { checkedInAt } : {}),
+        ...(h.status === 'COMPLETED' ? { completedAt: slotEnd } : {}),
+        ...(h.status === 'CANCELLED' ? { cancellationReason: 'PATIENT_REQUEST' } : {}),
+      },
+    });
+    if (h.diagnosis) {
+      const signed = h.status === 'COMPLETED';
+      await prisma.encounter.create({
+        data: {
+          patientId: appt.patientId,
+          providerId: provider.id,
+          appointmentId: appt.id,
+          status: signed ? 'SIGNED' : 'IN_PROGRESS',
+          noteJson: JSON.stringify({
+            subjective: { chiefComplaint: h.chiefComplaint, historyOfPresentIllness: 'Stable since last visit.', reviewOfSystems: null },
+            objective: { physicalExamFindings: 'No acute distress.', relevantResults: null },
+            assessment: {
+              diagnoses: signed ? [{ code: h.diagnosis, isPrimary: true, notes: null }] : [],
+              clinicalReasoning: null,
+            },
+            plan: { treatmentPlan: signed ? 'Continue current management.' : '', patientInstructions: null, followUpInstructions: null, ordersNotes: null },
+          }),
+          signedBy: signed ? provider.id : null,
+          signedAt: signed ? slotEnd : null,
+          createdAt: checkedInAt,
+        },
+      });
+    }
+    historyCount++;
+  }
+
+  // A patient who did not show up this morning.
+  await prisma.appointment.create({
+    data: {
+      patientId: allPatients[2].id, providerId: patel.id, appointmentTypeId: typeMap['Follow-Up Visit'],
+      ...slot(0, 8, 0, 15), status: 'NO_SHOW', reasonForVisit: 'Medication review',
+    },
+  });
+  console.log(`✅ Seeded ${historyCount + 1} historical visits (incl. today's no-show and an overdue unsigned note).`);
 }
+
+const ICD = (code: string, description: string) => ({ code, description });
+
+/** Past visits relative to today: completed with signed notes, plus no-shows, a cancellation, and one stale unsigned note. */
+const HISTORY_VISITS: Array<{
+  day: number; hour: number; patient: number; provider: 'chen' | 'patel'; type: string;
+  status: 'COMPLETED' | 'NO_SHOW' | 'CANCELLED' | 'IN_PROGRESS';
+  chiefComplaint: string; diagnosis: { code: string; description: string } | null;
+}> = [
+  { day: -2,  hour: 15, patient: 5, provider: 'chen',  type: 'Follow-Up Visit', status: 'IN_PROGRESS', chiefComplaint: 'COPD follow-up', diagnosis: ICD('J44.9', 'Chronic obstructive pulmonary disease, unspecified') },
+  { day: -4,  hour: 9,  patient: 5, provider: 'chen',  type: 'Follow-Up Visit', status: 'COMPLETED', chiefComplaint: 'Blood pressure check', diagnosis: ICD('I10', 'Essential (primary) hypertension') },
+  { day: -5,  hour: 10, patient: 6, provider: 'patel', type: 'Follow-Up Visit', status: 'COMPLETED', chiefComplaint: 'Migraine follow-up', diagnosis: ICD('G43.909', 'Migraine, unspecified, not intractable, without status migrainosus') },
+  { day: -6,  hour: 11, patient: 7, provider: 'chen',  type: 'Follow-Up Visit', status: 'COMPLETED', chiefComplaint: 'Knee pain', diagnosis: ICD('M25.561', 'Pain in right knee') },
+  { day: -8,  hour: 9,  patient: 0, provider: 'patel', type: 'Follow-Up Visit', status: 'COMPLETED', chiefComplaint: 'Diabetes follow-up', diagnosis: ICD('E11.9', 'Type 2 diabetes mellitus without complications') },
+  { day: -9,  hour: 10, patient: 6, provider: 'patel', type: 'Follow-Up Visit', status: 'NO_SHOW',   chiefComplaint: 'Medication check', diagnosis: null },
+  { day: -11, hour: 14, patient: 1, provider: 'chen',  type: 'Urgent Care',     status: 'COMPLETED', chiefComplaint: 'Seasonal allergies', diagnosis: ICD('J30.9', 'Allergic rhinitis, unspecified') },
+  { day: -12, hour: 9,  patient: 5, provider: 'chen',  type: 'Follow-Up Visit', status: 'CANCELLED', chiefComplaint: 'Routine follow-up', diagnosis: null },
+  { day: -15, hour: 10, patient: 2, provider: 'patel', type: 'Follow-Up Visit', status: 'COMPLETED', chiefComplaint: 'Thyroid follow-up', diagnosis: ICD('E03.9', 'Hypothyroidism, unspecified') },
+  { day: -19, hour: 9,  patient: 3, provider: 'chen',  type: 'Follow-Up Visit', status: 'COMPLETED', chiefComplaint: 'Heart failure follow-up', diagnosis: ICD('I50.9', 'Heart failure, unspecified') },
+  { day: -24, hour: 11, patient: 4, provider: 'patel', type: 'Follow-Up Visit', status: 'COMPLETED', chiefComplaint: 'Asthma check', diagnosis: ICD('J45.909', 'Unspecified asthma, uncomplicated') },
+];
 
 main()
   .catch((e) => { console.error(e); process.exit(1); })

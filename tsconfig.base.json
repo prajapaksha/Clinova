@@ -113,11 +113,11 @@
       "@clinova/identity/feature-auth": [
         "./libs/identity/feature-auth/src/index.ts"
       ],
-      "@clinova/shared/feature-dashboard": [
-        "./libs/shared/feature-dashboard/src/index.ts"
-      ],
       "@clinova/shared/feature-settings": [
         "./libs/shared/feature-settings/src/index.ts"
+      ],
+      "@clinova/reporting/feature-dashboard": [
+        "./libs/reporting/feature-dashboard/src/index.ts"
       ]
     }
   },

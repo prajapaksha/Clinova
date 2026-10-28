@@ -1,7 +1,7 @@
 {
   "name": "feature-dashboard",
   "$schema": "../../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "libs/shared/feature-dashboard/src",
+  "sourceRoot": "libs/reporting/feature-dashboard/src",
   "prefix": "lib",
   "projectType": "library",
   "tags": [],
