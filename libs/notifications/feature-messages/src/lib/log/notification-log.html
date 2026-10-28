@@ -1,0 +1,56 @@
+@if (!compact()) {
+  <div class="nl__filters">
+    <mat-select class="nl__select" [value]="status()" (selectionChange)="status.set($event.value); pageIndex.set(0)" aria-label="Status">
+      <mat-option value="">All statuses</mat-option>
+      @for (s of ['QUEUED', 'SENT', 'FAILED', 'SUPPRESSED', 'CANCELLED']; track s) { <mat-option [value]="s">{{ labels[s] }}</mat-option> }
+    </mat-select>
+    <mat-select class="nl__select" [value]="channel()" (selectionChange)="channel.set($event.value); pageIndex.set(0)" aria-label="Channel">
+      <mat-option value="">All channels</mat-option>
+      <mat-option value="EMAIL">Email</mat-option>
+      <mat-option value="SMS">Text message</mat-option>
+      <mat-option value="PORTAL">Portal</mat-option>
+    </mat-select>
+    <span class="nl__count">{{ total() }} message{{ total() === 1 ? '' : 's' }}</span>
+  </div>
+}
+@if (error()) { <p class="nl__error" role="alert">{{ error() }}</p> }
+<ul class="nl" [class.nl--compact]="compact()">
+  @for (e of entries(); track e.id) {
+    <li class="nl__item" [class.is-open]="expanded() === e.id">
+      <button type="button" class="nl__row" (click)="toggle(e)" [attr.aria-expanded]="expanded() === e.id">
+        <mat-icon class="nl__icon" [matTooltip]="e.channel">{{ icons[e.channel] }}</mat-icon>
+        <span class="nl__main">
+          <span class="nl__title">{{ e.typeLabel }}@if (showPatient() && e.patientName) { · {{ e.patientName }} }</span>
+          <span class="nl__meta">{{ e.subject || e.body }}</span>
+        </span>
+        <span class="nl__side">
+          <span class="nl__status" [attr.data-status]="e.status">{{ labels[e.status] }}</span>
+          <span class="nl__when">{{ when(e) | date:'MMM d, h:mm a' }}</span>
+        </span>
+      </button>
+      @if (expanded() === e.id) {
+        <div class="nl__detail">
+          <dl>
+            <div><dt>To</dt><dd>{{ e.channel === 'PORTAL' ? 'Patient portal' : e.recipient || '—' }}</dd></div>
+            <div><dt>{{ e.status === 'QUEUED' ? 'Scheduled for' : 'Sent' }}</dt><dd>{{ (e.sentAt ?? e.scheduledFor) | date:'medium' }}</dd></div>
+            @if (e.provider) { <div><dt>Via</dt><dd>{{ e.provider }}@if (e.attempts > 1) { · {{ e.attempts }} attempts }</dd></div> }
+            @if (e.statusReason) { <div><dt>Note</dt><dd>{{ e.statusReason }}</dd></div> }
+            @if (e.lastError) { <div><dt>Last error</dt><dd class="nl__err">{{ e.lastError }}</dd></div> }
+          </dl>
+          @if (e.subject) { <p class="nl__subject">{{ e.subject }}</p> }
+          <pre class="nl__body">{{ e.body }}</pre>
+          <div class="nl__actions">
+            @if (showPatient() && e.patientId) { <a mat-button [routerLink]="['/patients', e.patientId, 'communications']">Patient's messages</a> }
+            @if (canCancel(e)) { <button mat-stroked-button type="button" (click)="cancel(e, $event)">Cancel</button> }
+            @if (canRetry(e)) { <button mat-stroked-button type="button" (click)="retry(e, $event)"><mat-icon>refresh</mat-icon> Send again</button> }
+          </div>
+        </div>
+      }
+    </li>
+  } @empty {
+    <li class="nl__empty">No messages yet.</li>
+  }
+</ul>
+@if (!compact() && total() > pageSize()) {
+  <mat-paginator [length]="total()" [pageIndex]="pageIndex()" [pageSize]="pageSize()" [pageSizeOptions]="[25, 50, 100]" (page)="onPage($event)" aria-label="Message pages" />
+}

@@ -92,7 +92,9 @@
       ],
       "@clinova/portal/feature-portal": [
         "./libs/portal/feature-portal/src/index.ts"
-      ]
+      ],
+      "@clinova/api/shared": ["./libs/api/shared/src/index.ts"],
+      "@clinova/api/notifications": ["./libs/api/notifications/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"]

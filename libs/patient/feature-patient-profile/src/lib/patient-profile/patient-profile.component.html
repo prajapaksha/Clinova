@@ -139,6 +139,9 @@
         <mat-icon class="pp__tab-icon">assignment</mat-icon> Notes
       </a>
     }
+    <a mat-tab-link routerLink="communications" routerLinkActive #comm="routerLinkActive" [active]="comm.isActive">
+      <mat-icon class="pp__tab-icon">mark_email_read</mat-icon> Communications
+    </a>
   </nav>
   <mat-tab-nav-panel #tabPanel>
     <router-outlet />

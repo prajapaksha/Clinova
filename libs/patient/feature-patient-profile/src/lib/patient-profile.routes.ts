@@ -31,6 +31,10 @@ export const PATIENT_PROFILE_ROUTES: Route[] = [
         path: 'notes',
         loadComponent: () => import('./tabs/notes-tab/notes-tab.component').then(m => m.NotesTab),
       },
+      {
+        path: 'communications',
+        loadComponent: () => import('./tabs/communications-tab/communications-tab.component').then(m => m.CommunicationsTab),
+      },
     ],
   },
 ];

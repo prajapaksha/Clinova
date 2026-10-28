@@ -28,6 +28,7 @@ import {
 } from '@clinova/billing/domain';
 import type { EncounterSignedEvent } from '@clinova/clinical/domain';
 import type { Address } from '@clinova/patient/domain';
+import type { InvoiceIssuedEvent } from '@clinova/api/notifications';
 import { PrismaService } from '../prisma/prisma.service';
 import type { AuthUser } from '../auth/auth.service';
 import { DomainEventBus } from '../events/domain-event-bus';
@@ -230,6 +231,7 @@ export class InvoicesService implements OnModuleInit {
       where: { id },
       data: { issuedAt: now, dueDate: new Date(now.getTime() + INVOICE_DUE_DAYS * DAY_MS) },
     });
+    this.events?.publish({ type: 'billing.InvoiceIssued', invoiceId: id, patientId: row.patientId, timestamp: now } satisfies InvoiceIssuedEvent);
     return this.findById(id);
   }
 

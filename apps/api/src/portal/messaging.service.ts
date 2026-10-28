@@ -1,4 +1,5 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException, Optional } from '@nestjs/common';
+import { DomainEventBus } from '../events/domain-event-bus';
 import type { MessageThread, Prisma, ThreadMessage as MessageRow } from '@prisma/client';
 import type { Thread, ThreadId, ThreadSummary } from '@clinova/portal/domain';
 import { ThreadCategory } from '@clinova/portal/domain';
@@ -19,7 +20,13 @@ export class MessagingService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
+    @Optional() private readonly events?: DomainEventBus,
   ) {}
+
+  private publish(type: 'portal.PatientMessageSent' | 'portal.CareTeamReplied', thread: Thread): void {
+    const last = thread.messages[thread.messages.length - 1];
+    if (last) this.events?.publish({ type, threadId: thread.id, messageId: last.id, timestamp: new Date() });
+  }
 
   // ── Patient side ───────────────────────────────────────────────────────────
 
@@ -52,13 +59,17 @@ export class MessagingService {
       },
       include: { messages: true },
     });
-    return this.full(row, 'PATIENT');
+    const thread = this.full(row, 'PATIENT');
+    this.publish('portal.PatientMessageSent', thread);
+    return thread;
   }
 
   async patientReply(patientId: string, id: string, body: string, author: Author): Promise<Thread> {
     const row = await this.load(id);
     if (row.patientId !== patientId) throw new NotFoundException('Conversation not found.');
-    return this.addMessage(row, 'PATIENT', body, author);
+    const thread = await this.addMessage(row, 'PATIENT', body, author);
+    this.publish('portal.PatientMessageSent', thread);
+    return thread;
   }
 
   async patientUnreadCount(patientId: string): Promise<number> {
@@ -94,6 +105,7 @@ export class MessagingService {
   async staffReply(id: string, body: string, author: Author, ctx: AuditContext): Promise<Thread> {
     const row = await this.load(id);
     const thread = await this.addMessage(row, 'STAFF', body, author);
+    this.publish('portal.CareTeamReplied', thread);
     await this.audit.log(ctx, { action: AuditAction.Create, resourceType: 'ThreadMessage', resourceId: id, patientId: row.patientId });
     const names = await this.patientNames([row.patientId]);
     return { ...thread, ...names.get(row.patientId) };

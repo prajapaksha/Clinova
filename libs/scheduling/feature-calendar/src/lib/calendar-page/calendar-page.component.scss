@@ -315,3 +315,5 @@ $grid-height: #{($end-hour - $start-hour) * 64}px;
 
   &__btn-danger { color: var(--mat-sys-error, #dc2626) !important; }
 }
+
+.cal__notices { margin-top: 16px; border-top: 1px solid var(--clv-gray-200); padding-top: 8px; summary { cursor: pointer; font-size: 13px; font-weight: 500; color: var(--clv-gray-700); } }

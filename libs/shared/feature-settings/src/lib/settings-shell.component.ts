@@ -42,6 +42,8 @@ export class SettingsShellComponent {
 
   protected readonly items = computed(() => [
     ...(this.perms.can('identity:auditLogs') ? [{ label: 'Audit log', icon: 'policy', route: 'audit-log' }] : []),
+    ...(this.perms.can('system:settings') ? [{ label: 'Notification templates', icon: 'edit_notifications', route: 'notifications' }] : []),
+    { label: 'Message log', icon: 'outgoing_mail', route: 'message-log' },
     { label: 'Roles & permissions', icon: 'admin_panel_settings', route: 'permissions' },
     ...(this.perms.can('billing:invoices') ? [{ label: 'Fee schedules', icon: 'price_change', route: '/billing/fee-schedules' }] : []),
   ]);

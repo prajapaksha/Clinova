@@ -8,6 +8,7 @@ import { MatMenuModule } from '@angular/material/menu';
 import { IdleTimeout } from '@clinova/auth';
 import { PortalApiService, PortalSession } from '@clinova/portal/data-access';
 import { PATIENT_IDLE_TIMEOUT_MINUTES } from '@clinova/portal/domain';
+import { PortalNotificationsMenu } from './portal-notifications';
 
 interface NavLink {
   label: string;
@@ -27,7 +28,7 @@ const NAV: NavLink[] = [
 
 @Component({
   selector: 'clv-portal-shell',
-  imports: [RouterModule, MatButtonModule, MatIconModule, MatMenuModule],
+  imports: [RouterModule, MatButtonModule, MatIconModule, MatMenuModule, PortalNotificationsMenu],
   templateUrl: './portal-shell.html',
   styleUrl: './portal-shell.scss',
 })

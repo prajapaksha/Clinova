@@ -1185,6 +1185,9 @@ async function main() {
   await prisma.encounterTemplate.deleteMany({});
   await prisma.appointment.deleteMany({});
   await prisma.appointmentType.deleteMany({});
+  await prisma.notification.deleteMany({});
+  await prisma.staffNotification.deleteMany({});
+  await prisma.notificationTemplate.deleteMany({});
   await prisma.threadMessage.deleteMany({});
   await prisma.messageThread.deleteMany({});
   await prisma.refillRequest.deleteMany({});
@@ -1405,6 +1408,7 @@ async function main() {
 
   await seedBilling(chen.id, patel.id);
   await seedPortal();
+  await seedNotifications();
 }
 
 const ICD = (code: string, description: string) => ({ code, description });
@@ -1738,4 +1742,64 @@ async function seedPortal() {
     },
   });
   console.log(`  ✓ 2 conversations, ${rx ? 1 : 0} refill request, 1 profile update for staff review`);
+}
+// --- notifications -------------------------------------------------------------
+
+/** A short history of delivered notices plus staff alerts; the worker queues upcoming reminders itself. */
+async function seedNotifications() {
+  console.log('\n🔔 Seeding notification history…\n');
+  const DAY = 86_400_000;
+  const ago = (days: number, hour = 10) => { const d = new Date(Date.now() - days * DAY); d.setHours(hour, 0, 0, 0); return d; };
+  const find = (firstName: string, lastName: string) => prisma.patient.findFirstOrThrow({ where: { firstName, lastName }, include: { portalAccount: true } });
+  const james = await find('James', 'Okafor');
+  const thomas = await find('Thomas', 'Brennan');
+  const ruth = await find('Ruth', 'Abernathy');
+  const footer = '\n\nClinova Health · (555) 010-0100';
+  let n = 0;
+  const note = async (d: {
+    patient: { id: string; contactJson: string; portalAccount?: { id: string } | null }; type: string; channel: 'EMAIL' | 'SMS' | 'PORTAL';
+    at: Date; subject: string | null; body: string; status?: string; reason?: string; error?: string; link?: string; read?: boolean;
+    relatedType?: string; relatedId?: string;
+  }) => {
+    const contact = JSON.parse(d.patient.contactJson) as { email?: string | null; primaryPhone?: string };
+    const status = d.status ?? 'SENT';
+    await prisma.notification.create({
+      data: {
+        type: d.type, channel: d.channel, patientId: d.patient.id, subject: d.subject, body: d.body, status,
+        recipient: d.channel === 'PORTAL' ? d.patient.portalAccount?.id ?? null : d.channel === 'EMAIL' ? contact.email ?? null : contact.primaryPhone ?? null,
+        statusReason: d.reason ?? null, lastError: d.error ?? null, attempts: status === 'FAILED' ? 5 : status === 'SENT' && d.channel !== 'PORTAL' ? 1 : 0,
+        provider: status === 'SENT' ? (d.channel === 'PORTAL' ? 'portal' : 'dev-outbox') : status === 'FAILED' ? 'dev-outbox' : null,
+        scheduledFor: d.at, sentAt: status === 'SENT' ? d.at : null, createdAt: d.at, link: d.link ?? null,
+        readAt: d.read ? d.at : null, relatedType: d.relatedType ?? null, relatedId: d.relatedId ?? null,
+        dedupeKey: `seed:${n++}:${d.type}:${d.channel}`,
+      },
+    });
+  };
+
+  // James: portal + email history matching his seeded portal data.
+  await note({ patient: james, type: 'DOCUMENT_AVAILABLE', channel: 'PORTAL', at: ago(8), subject: 'New document: Diabetes care plan.pdf', body: 'The office shared a document with you.', link: '/records?tab=documents' });
+  await note({ patient: james, type: 'DOCUMENT_AVAILABLE', channel: 'EMAIL', at: ago(8), subject: 'A new document is in your patient portal', body: `Hi James,\n\nThe office shared a new document with you. Sign in to view it securely: http://localhost:4300${footer}` });
+  await note({ patient: james, type: 'RESULTS_READY', channel: 'PORTAL', at: ago(6), subject: 'New result: Hemoglobin A1c - result.pdf', body: 'Dr. Ananya Patel, DO reviewed and released your result.', link: '/records?tab=documents', read: true });
+  await note({ patient: james, type: 'RESULTS_READY', channel: 'EMAIL', at: ago(6), subject: 'Your test results are ready', body: `Hi James,\n\nYour doctor has reviewed and released a test result. Sign in to the patient portal to see it: http://localhost:4300${footer}` });
+  await note({ patient: james, type: 'MESSAGE_RECEIVED', channel: 'PORTAL', at: ago(2, 11), subject: 'New reply: Metformin and an upset stomach', body: 'Your care team replied to your message.', link: '/messages' });
+  await note({ patient: james, type: 'MESSAGE_RECEIVED', channel: 'EMAIL', at: ago(2, 11), subject: 'You have a new message from Clinova Health', body: `Hi James,\n\nYour care team replied to your message. Sign in to read it securely: http://localhost:4300${footer}` });
+
+  // Delivery problems staff can see and act on.
+  await note({ patient: thomas, type: 'APPOINTMENT_CONFIRMATION', channel: 'SMS', at: ago(1, 15), status: 'FAILED', error: "Twilio 400: The 'To' number is not a valid phone number.",
+    subject: null, body: "Clinova Health: You're booked with Dr. Ananya Patel, DO. Reply STOP to opt out." });
+  await note({ patient: ruth, type: 'APPOINTMENT_CONFIRMATION', channel: 'EMAIL', at: ago(1, 9), status: 'SUPPRESSED', reason: 'No email address on file',
+    subject: 'Your appointment is confirmed', body: 'Hi Ruth,\n\nYou are booked with Dr. Wei Chen, MD.' });
+
+  // Staff in-app alerts for the seeded portal activity.
+  const staff = await prisma.staff.findMany({ where: { isActive: true } });
+  const by = (role: string) => staff.filter(s => s.role === role).map(s => s.id);
+  const rx = await prisma.prescription.findFirst({ where: { patientId: james.id, status: 'ACTIVE' } });
+  const alerts = [
+    ...[...by('STAFF'), ...by('ADMIN')].map(userId => ({ userId, kind: 'PROFILE_UPDATE', title: 'Profile update from Thomas Brennan', body: 'Review contact or insurance changes submitted in the portal.', link: '/messages?tab=updates', createdAt: ago(1, 16) })),
+    ...by('ADMIN').concat(by('BILLING')).map(userId => ({ userId, kind: 'PATIENT_MESSAGE', title: 'Message from Thomas Brennan', body: 'Question about my last bill', link: '/messages', createdAt: ago(0, 8) })),
+    ...(rx ? [{ userId: rx.prescriberId, kind: 'REFILL_REQUEST', title: 'Refill request from James Okafor', body: 'Metformin 1000 mg', link: '/messages?tab=refills', createdAt: ago(0, 7) }] : []),
+  ];
+  await prisma.staffNotification.createMany({ data: alerts });
+  console.log(`  ✓ ${n} patient notifications (incl. 1 failed text, 1 suppressed email), ${alerts.length} staff alerts`);
+  console.log('  → Run the worker (pnpm nx serve worker) to queue reminders for upcoming visits and deliver them.');
 }

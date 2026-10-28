@@ -16,6 +16,7 @@
       }
     </nav>
 
+    <clv-portal-notifications />
     <button mat-button class="me" [matMenuTriggerFor]="menu" aria-label="Account menu">
       <span class="me__avatar" aria-hidden="true">{{ initials() }}</span>
       <span class="me__name">{{ user()?.preferredName || user()?.firstName }}</span>

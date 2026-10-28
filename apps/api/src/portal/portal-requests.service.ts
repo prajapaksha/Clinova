@@ -1,4 +1,5 @@
-import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException, Optional } from '@nestjs/common';
+import { DomainEventBus } from '../events/domain-event-bus';
 import { randomUUID } from 'crypto';
 import type { ProfileChangeRequest as ChangeRow, RefillRequest as RefillRow } from '@prisma/client';
 import type { DrugDose } from '@clinova/clinical/domain';
@@ -97,7 +98,12 @@ export class PortalRequestsService {
     private readonly audit: AuditService,
     private readonly patients: PatientsService,
     private readonly records: PortalRecordsService,
+    @Optional() private readonly events?: DomainEventBus,
   ) {}
+
+  private publish(type: string, payload: Record<string, string>): void {
+    this.events?.publish({ type, timestamp: new Date(), ...payload });
+  }
 
   // ── Refills ────────────────────────────────────────────────────────────────
 
@@ -110,6 +116,7 @@ export class PortalRequestsService {
     const row = await this.prisma.refillRequest.create({
       data: { patientId, prescriptionId: rx.id, pharmacy: dto.pharmacy?.trim() || null, note: dto.note?.trim() || null },
     });
+    this.publish('portal.RefillRequested', { refillRequestId: row.id });
     return (await this.refills({ ids: [row.id] }))[0];
   }
 
@@ -143,6 +150,7 @@ export class PortalRequestsService {
       }
     });
     await this.audit.log(ctx, { action: AuditAction.Update, resourceType: 'RefillRequest', resourceId: id, patientId: row.patientId, newValue: decision });
+    this.publish('portal.RefillResponded', { refillRequestId: id });
     return (await this.refills({ ids: [id] }))[0];
   }
 
@@ -185,6 +193,7 @@ export class PortalRequestsService {
       ? await this.prisma.profileChangeRequest.update({ where: { id: existing.id }, data: { changesJson: JSON.stringify(changes), createdAt: new Date() } })
       : await this.prisma.profileChangeRequest.create({ data: { patientId, changesJson: JSON.stringify(changes) } });
     await this.audit.log(ctx, { action: AuditAction.Create, resourceType: 'ProfileChangeRequest', resourceId: row.id, patientId, newValue: Object.keys(changes) });
+    if (!existing) this.publish('portal.ProfileChangeRequested', { requestId: row.id });
     return (await this.toChanges([row]))[0];
   }
 
@@ -218,6 +227,7 @@ export class PortalRequestsService {
       where: { id },
       data: { status: decision, reviewedBy: ctx.user?.id ?? null, reviewedAt: new Date(), rejectionReason: reason?.trim() || null },
     });
+    this.publish('portal.ProfileChangeReviewed', { requestId: id });
     return (await this.toChanges([updated]))[0];
   }
 

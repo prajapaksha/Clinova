@@ -1,21 +1,12 @@
-/**
- * This is not a production server yet!
- * This is only a minimal backend to get started.
- */
-
 import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app/app.module';
+import { WorkerModule } from './app/worker.module';
 
+/** Background job processor (PRD §12.2): delivers the notification outbox and runs schedules. */
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
-  const globalPrefix = 'api';
-  app.setGlobalPrefix(globalPrefix);
-  const port = process.env.PORT || 3000;
-  await app.listen(port);
-  Logger.log(
-    `🚀 Application is running on: http://localhost:${port}/${globalPrefix}`,
-  );
+  const app = await NestFactory.createApplicationContext(WorkerModule, { logger: ['log', 'warn', 'error', 'fatal'] });
+  app.enableShutdownHooks();
+  Logger.log('Clinova worker started', 'Worker');
 }
 
 bootstrap();

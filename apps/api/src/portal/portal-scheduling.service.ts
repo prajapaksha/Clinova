@@ -1,4 +1,6 @@
-import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException, Optional } from '@nestjs/common';
+import type { AppointmentEvent, AppointmentEventType } from '@clinova/api/notifications';
+import { DomainEventBus } from '../events/domain-event-bus';
 import type { Appointment, AppointmentType, Staff } from '@prisma/client';
 import { isProviderRole } from '@clinova/identity/domain';
 import type { AvailabilityDay, BookableType, PortalAppointment, PortalProvider, TimeWindow } from '@clinova/portal/domain';
@@ -19,7 +21,14 @@ const SIGNED = [EncounterStatus.Signed, EncounterStatus.Amended];
 /** Patient self-scheduling against providers' weekly schedules (PRD §4.2, §4.8). */
 @Injectable()
 export class PortalSchedulingService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Optional() private readonly events?: DomainEventBus,
+  ) {}
+
+  private publish(type: AppointmentEventType, appointmentId: string): void {
+    this.events?.publish({ type, appointmentId, timestamp: new Date() } satisfies AppointmentEvent);
+  }
 
   async bookableTypes(): Promise<BookableType[]> {
     const rows = await this.prisma.appointmentType.findMany({ where: { isActive: true, isPatientBookable: true }, orderBy: { name: 'asc' } });
@@ -100,6 +109,7 @@ export class PortalSchedulingService {
         notes: 'Booked online via the patient portal.',
       },
     });
+    this.publish('scheduling.AppointmentBooked', row.id);
     return (await this.appointments(patientId, now)).find(a => a.id === row.id) as PortalAppointment;
   }
 
@@ -116,6 +126,7 @@ export class PortalSchedulingService {
         notes: [existing.notes, `Rescheduled online by the patient on ${now.toISOString().slice(0, 10)}.`].filter(Boolean).join('\n'),
       },
     });
+    this.publish('scheduling.AppointmentRescheduled', existing.id);
     return (await this.appointments(patientId, now)).find(a => a.id === existing.id) as PortalAppointment;
   }
 
@@ -125,6 +136,7 @@ export class PortalSchedulingService {
       where: { id: existing.id },
       data: { status: AppointmentStatus.Cancelled, cancellationReason: CancellationReason.PatientRequest, cancellationNote: note?.trim() || 'Cancelled online by the patient.' },
     });
+    this.publish('scheduling.AppointmentCancelled', existing.id);
     return (await this.appointments(patientId, now)).find(a => a.id === existing.id) as PortalAppointment;
   }
 

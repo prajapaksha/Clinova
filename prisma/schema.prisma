@@ -447,3 +447,74 @@ model SavedPaymentMethod {
 
   @@index([patientId])
 }
+// ─── Notifications (PRD §4.6) ─────────────────────────────────────────────────
+
+/// Outbound message log and delivery queue (transactional outbox drained by apps/worker).
+model Notification {
+  id                String    @id @default(cuid())
+  /// NotificationType, e.g. APPOINTMENT_REMINDER_48H
+  type              String
+  /// EMAIL | SMS | PORTAL
+  channel           String
+  patientId         String?
+  appointmentId     String?
+  /// Related aggregate (Invoice, Payment, Document, …) for linking from the log.
+  relatedType       String?
+  relatedId         String?
+  /// Email address, phone number, or portal account id.
+  recipient         String?
+  subject           String?
+  body              String
+  /// QUEUED | SENDING | SENT | FAILED | SUPPRESSED | CANCELLED
+  status            String    @default("QUEUED")
+  /// Why it was suppressed or cancelled (opted out, no email on file, appointment moved…).
+  statusReason      String?
+  scheduledFor      DateTime  @default(now())
+  attempts          Int       @default(0)
+  lastError         String?
+  provider          String?
+  providerMessageId String?
+  sentAt            DateTime?
+  /// Portal route opened from a portal notification.
+  link              String?
+  /// Portal notifications: when the patient saw it.
+  readAt            DateTime?
+  /// Prevents duplicates (e.g. one 48h reminder per appointment time).
+  dedupeKey         String    @unique
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([status, scheduledFor])
+  @@index([patientId, createdAt])
+  @@index([appointmentId])
+  @@index([channel, recipient, readAt])
+}
+
+/// Practice overrides of the built-in templates (one per type and channel).
+model NotificationTemplate {
+  id        String   @id @default(cuid())
+  type      String
+  channel   String
+  subject   String?
+  body      String
+  isActive  Boolean  @default(true)
+  updatedBy String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([type, channel])
+}
+
+/// In-app notification center for staff (bell icon).
+model StaffNotification {
+  id        String    @id @default(cuid())
+  userId    String
+  kind      String
+  title     String
+  body      String
+  link      String?
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, readAt, createdAt])
+}

@@ -1,4 +1,6 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException, Optional } from '@nestjs/common';
+import type { AppointmentEvent, AppointmentEventType } from '@clinova/api/notifications';
+import { DomainEventBus } from '../../events/domain-event-bus';
 import { PrismaService } from '../../prisma/prisma.service';
 import type { Appointment, AppointmentType, Staff } from '@prisma/client';
 import { BookAppointmentDto, UpdateAppointmentDto } from './dto/book-appointment.dto';
@@ -24,7 +26,14 @@ export interface FindManyFilters {
 
 @Injectable()
 export class AppointmentsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Optional() private readonly events?: DomainEventBus,
+  ) {}
+
+  private publish(type: AppointmentEventType, appointmentId: string): void {
+    this.events?.publish({ type, appointmentId, timestamp: new Date() } satisfies AppointmentEvent);
+  }
 
   private toAppointment(
     row: Appointment & { appointmentType?: AppointmentType },
@@ -161,6 +170,7 @@ export class AppointmentsService {
       include: { appointmentType: true },
     });
 
+    this.publish('scheduling.AppointmentBooked', row.id);
     return this.findById(row.id);
   }
 
@@ -183,6 +193,10 @@ export class AppointmentsService {
       },
     });
 
+    const moved = dto.slotStart !== undefined && new Date(dto.slotStart).getTime() !== existing.slotStart.getTime();
+    if (dto.status && dto.status !== existing.status && dto.status === 'CANCELLED') this.publish('scheduling.AppointmentCancelled', id);
+    else if (dto.status && dto.status !== existing.status && dto.status === 'NO_SHOW') this.publish('scheduling.AppointmentNoShow', id);
+    else if (moved) this.publish('scheduling.AppointmentRescheduled', id);
     return this.findById(id);
   }
 
@@ -215,6 +229,7 @@ export class AppointmentsService {
       },
     });
 
+    if (existing.status !== 'CANCELLED') this.publish('scheduling.AppointmentCancelled', id);
     return this.findById(id);
   }
 
@@ -229,6 +244,7 @@ export class AppointmentsService {
       data: { status: 'NO_SHOW' },
     });
 
+    if (existing.status !== 'NO_SHOW') this.publish('scheduling.AppointmentNoShow', id);
     return this.findById(id);
   }
 

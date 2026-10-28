@@ -1,46 +1,68 @@
 import { inject, Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import type {
-  NotificationTemplate, NotificationTemplateId,
-  NotificationLog, NotificationPreferences,
-  NotificationChannel, NotificationTrigger,
-} from '@clinova/notifications/domain';
+import type { NotificationChannel, NotificationLogEntry, NotificationType, StaffNotificationItem, TemplateView } from '@clinova/notifications/domain';
 
+export interface LogFilters {
+  patientId?: string;
+  appointmentId?: string;
+  status?: string;
+  channel?: string;
+  type?: string;
+  limit?: number;
+  offset?: number;
+}
+
+export interface TemplatePreview {
+  subject: string | null;
+  body: string;
+  errors: string[];
+}
+
+/** Staff-side notification APIs: delivery log, templates and the in-app notification center. */
 @Injectable({ providedIn: 'root' })
 export class NotificationsApiService {
   private readonly http = inject(HttpClient);
 
-  getTemplates(activeOnly = true): Observable<NotificationTemplate[]> {
-    return this.http.get<NotificationTemplate[]>('/api/notification-templates', { params: { activeOnly: String(activeOnly) } });
+  log(filters: LogFilters = {}): Observable<{ entries: NotificationLogEntry[]; total: number }> {
+    let params = new HttpParams();
+    for (const [k, v] of Object.entries(filters)) if (v !== undefined && v !== '') params = params.set(k, String(v));
+    return this.http.get<{ entries: NotificationLogEntry[]; total: number }>('/api/notifications', { params });
   }
 
-  getTemplate(id: NotificationTemplateId): Observable<NotificationTemplate> {
-    return this.http.get<NotificationTemplate>(`/api/notification-templates/${id}`);
+  summary(): Observable<Record<string, number>> {
+    return this.http.get<Record<string, number>>('/api/notifications/summary');
   }
 
-  updateTemplate(id: NotificationTemplateId, updates: { subjectTemplate?: string; bodyTemplate?: string; isActive?: boolean }): Observable<NotificationTemplate> {
-    return this.http.patch<NotificationTemplate>(`/api/notification-templates/${id}`, updates);
+  retry(id: string): Observable<NotificationLogEntry> {
+    return this.http.post<NotificationLogEntry>(`/api/notifications/${id}/retry`, {});
   }
 
-  getLog(filters: { entityType?: string; entityId?: string; recipientId?: string; limit?: number }): Observable<NotificationLog[]> {
-    const params: Record<string, string> = {};
-    if (filters.entityType) params['entityType'] = filters.entityType;
-    if (filters.entityId) params['entityId'] = filters.entityId;
-    if (filters.recipientId) params['recipientId'] = filters.recipientId;
-    if (filters.limit) params['limit'] = String(filters.limit);
-    return this.http.get<NotificationLog[]>('/api/notification-log', { params });
+  cancel(id: string): Observable<NotificationLogEntry> {
+    return this.http.post<NotificationLogEntry>(`/api/notifications/${id}/cancel`, {});
   }
 
-  getPatientPreferences(patientId: string): Observable<NotificationPreferences> {
-    return this.http.get<NotificationPreferences>(`/api/patients/${patientId}/notification-preferences`);
+  templates(): Observable<TemplateView[]> {
+    return this.http.get<TemplateView[]>('/api/notification-templates');
   }
 
-  updatePatientPreferences(patientId: string, prefs: Partial<NotificationPreferences>): Observable<NotificationPreferences> {
-    return this.http.patch<NotificationPreferences>(`/api/patients/${patientId}/notification-preferences`, prefs);
+  saveTemplate(type: NotificationType, channel: NotificationChannel, input: { subject: string | null; body: string; isActive: boolean }): Observable<TemplateView> {
+    return this.http.put<TemplateView>(`/api/notification-templates/${type}/${channel}`, input);
   }
 
-  sendTest(trigger: NotificationTrigger, channel: NotificationChannel, recipientId: string): Observable<void> {
-    return this.http.post<void>('/api/notification-templates/test', { trigger, channel, recipientId });
+  resetTemplate(type: NotificationType, channel: NotificationChannel): Observable<TemplateView> {
+    return this.http.delete<TemplateView>(`/api/notification-templates/${type}/${channel}`);
+  }
+
+  preview(type: NotificationType, subject: string | null, body: string): Observable<TemplatePreview> {
+    return this.http.post<TemplatePreview>('/api/notification-templates/preview', { type, subject, body });
+  }
+
+  mine(): Observable<{ items: StaffNotificationItem[]; unread: number }> {
+    return this.http.get<{ items: StaffNotificationItem[]; unread: number }>('/api/me/notifications');
+  }
+
+  markRead(id?: string): Observable<void> {
+    return this.http.post<void>('/api/me/notifications/read', id ? { id } : {});
   }
 }

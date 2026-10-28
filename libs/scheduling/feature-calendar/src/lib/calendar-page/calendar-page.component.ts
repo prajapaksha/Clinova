@@ -1,3 +1,4 @@
+import { NotificationLog } from '@clinova/notifications/feature-messages';
 import { Component, computed, DestroyRef, effect, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DatePipe, TitleCasePipe } from '@angular/common';
@@ -50,7 +51,7 @@ function formatHour(h: number): string {
   imports: [
     DatePipe, TitleCasePipe, FormsModule, RouterModule,
     MatButtonModule, MatIconModule, MatSelectModule,
-    MatProgressSpinnerModule, MatTooltipModule, MatChipsModule,
+    MatProgressSpinnerModule, MatTooltipModule, MatChipsModule, NotificationLog,
   ],
   templateUrl: './calendar-page.component.html',
   styleUrl: './calendar-page.component.scss',

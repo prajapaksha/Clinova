@@ -39,7 +39,8 @@
 
 @media (max-width: 760px) {
   .top__nav, .me__name { display: none; }
-  .top__inner { justify-content: space-between; padding: 8px 14px; }
+  .top__inner { gap: 8px; padding: 8px 14px; }
+  .brand { margin-right: auto; }
   .main { padding: 18px 14px calc(88px + env(safe-area-inset-bottom)); }
   .foot { margin-bottom: calc(64px + env(safe-area-inset-bottom)); }
   .tabs {

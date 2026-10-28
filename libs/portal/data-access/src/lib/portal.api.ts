@@ -22,6 +22,7 @@ import type {
   VisitSummaryListItem,
 } from '@clinova/portal/domain';
 import type { ContactInfo, EmergencyContact, InsurancePolicy } from '@clinova/patient/domain';
+import type { PortalNotification } from '@clinova/notifications/domain';
 
 export interface BillingSummary {
   balanceCents: number;
@@ -72,6 +73,14 @@ export interface PreferencesResponse {
 export class PortalApiService {
   private readonly http = inject(HttpClient);
   private readonly base = '/api/portal';
+
+  notifications(): Observable<{ items: PortalNotification[]; unread: number }> {
+    return this.http.get<{ items: PortalNotification[]; unread: number }>(`${this.base}/notifications`);
+  }
+
+  markNotificationsRead(id?: string): Observable<void> {
+    return this.http.post<void>(`${this.base}/notifications/read`, id ? { id } : {});
+  }
 
   dashboard(): Observable<PortalDashboard> {
     return this.http.get<PortalDashboard>(`${this.base}/dashboard`);

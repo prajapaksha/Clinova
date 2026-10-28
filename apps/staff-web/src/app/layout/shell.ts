@@ -3,6 +3,7 @@ import { NavigationEnd, Router, RouterModule } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { filter, merge, timer } from 'rxjs';
 import { InboxCounts } from '@clinova/portal/data-access';
+import { NotificationBell } from './notification-bell';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatIconModule } from '@angular/material/icon';
@@ -53,6 +54,7 @@ const QUICK_CREATE: NavItem[] = [
     MatTooltipModule,
     MatBadgeModule,
     MatMenuModule,
+    NotificationBell,
   ],
   template: `
     <mat-sidenav-container class="shell-container">
@@ -135,11 +137,7 @@ const QUICK_CREATE: NavItem[] = [
           }
 
           <!-- Notifications -->
-          <button mat-icon-button aria-label="Notifications"
-            [matBadge]="unreadCount() || null"
-            matBadgeColor="warn">
-            <mat-icon>notifications</mat-icon>
-          </button>
+          <clv-notification-bell />
 
           <!-- Help -->
           <button mat-icon-button aria-label="Help and keyboard shortcuts">
@@ -205,7 +203,6 @@ export class ShellComponent {
     return u ? `${u.firstName[0] ?? ''}${u.lastName[0] ?? ''}`.toUpperCase() : '';
   });
   protected readonly collapsed = signal(false);
-  protected readonly unreadCount = signal(0);
 
   private passwordDialog: MatDialogRef<ChangePasswordDialog> | null = null;
 

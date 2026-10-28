@@ -16,6 +16,7 @@ import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { AuditModule } from '../audit/audit.module';
 import { StorageModule } from '../storage/file-storage';
 import { PortalModule } from '../portal/portal.module';
+import { NotificationsApiModule } from '../notifications/notifications.controller';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { PortalModule } from '../portal/portal.module';
     ReportingModule,
     BillingModule,
     PortalModule,
+    NotificationsApiModule,
   ],
   controllers: [AppController],
   providers: [

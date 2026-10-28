@@ -1,4 +1,6 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException, Optional } from '@nestjs/common';
+import type { DocumentSharedEvent } from '@clinova/api/notifications';
+import { DomainEventBus } from '../events/domain-event-bus';
 import { PrismaService } from '../prisma/prisma.service';
 import type { Patient as PrismaPatient } from '@prisma/client';
 import type {
@@ -20,6 +22,7 @@ import type {
 } from '@clinova/patient/domain';
 import { AlertSeverity, AllergyType, DocumentCategory, RESULT_DOCUMENT_CATEGORIES } from '@clinova/patient/domain';
 import { AuditAction, PATIENT_MEDICAL_FIELDS, hasAccess } from '@clinova/identity/domain';
+import { displayName } from '@clinova/staff/domain';
 import { CreatePatientDto } from './dto/create-patient.dto';
 import { AuditContext, AuditService } from '../audit/audit.service';
 import { FileStorageService } from '../storage/file-storage';
@@ -168,6 +171,7 @@ export class PatientsService {
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
     private readonly files: FileStorageService,
+    @Optional() private readonly events?: DomainEventBus,
   ) {}
 
   async search(filters: {
@@ -419,11 +423,12 @@ export class PatientsService {
       throw new ForbiddenException('Only a physician can release results to the patient.');
     }
     if ((note?.length ?? 0) > 2000) throw new BadRequestException('The note is too long.');
+    const sharer = shared && ctx.user ? await this.prisma.staff.findUnique({ where: { id: ctx.user.id } }) : null;
     docs[index] = {
       ...docs[index],
       sharedWithPatient: shared,
       sharedAt: shared ? new Date().toISOString() : null,
-      sharedByName: shared && ctx.user ? `${ctx.user.firstName} ${ctx.user.lastName}` : null,
+      sharedByName: !shared || !ctx.user ? null : sharer ? displayName(sharer) : `${ctx.user.firstName} ${ctx.user.lastName}`,
       releaseNote: shared ? note?.trim() || null : null,
       patientViewedAt: null,
     };
@@ -432,6 +437,12 @@ export class PatientsService {
       action: AuditAction.Update, resourceType: 'Document', resourceId: documentId, patientId,
       fieldName: 'sharedWithPatient', oldValue: !shared, newValue: shared,
     });
+    if (shared) {
+      this.events?.publish({
+        type: 'patient.DocumentShared', patientId, documentId, documentName: String(docs[index]['name']), isResult,
+        sharedByName: (docs[index]['sharedByName'] as string | null) ?? null, timestamp: new Date(),
+      } satisfies DocumentSharedEvent);
+    }
     return (await this.findById(patientId)).documents.find((d) => d.id === documentId) as PatientDocument;
   }
 

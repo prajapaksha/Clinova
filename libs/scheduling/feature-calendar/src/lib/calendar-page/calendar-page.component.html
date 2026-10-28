@@ -207,6 +207,11 @@
             </button>
           }
         </div>
+
+        <details class="cal__notices">
+          <summary>Reminders & messages</summary>
+          <clv-notification-log [appointmentId]="appt.id" [compact]="true" />
+        </details>
       </div>
     }
 

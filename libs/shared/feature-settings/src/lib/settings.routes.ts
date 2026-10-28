@@ -19,6 +19,15 @@ export const SETTINGS_ROUTES: Route[] = [
         loadComponent: () => import('./audit-log/audit-log.component').then(m => m.AuditLogComponent),
       },
       {
+        path: 'notifications',
+        canActivate: [requirePermission({ capability: 'system:settings', access: 'read' })],
+        loadComponent: () => import('./notification-templates/notification-templates').then(m => m.NotificationTemplatesComponent),
+      },
+      {
+        path: 'message-log',
+        loadComponent: () => import('./message-log.component').then(m => m.MessageLogComponent),
+      },
+      {
         path: 'permissions',
         loadComponent: () => import('./permissions-matrix/permissions-matrix.component').then(m => m.PermissionsMatrixComponent),
       },

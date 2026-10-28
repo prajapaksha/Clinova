@@ -48,7 +48,7 @@ export function normalizeInviteCode(code: string): string {
 }
 
 // ── Notification preferences (PRD §4.6) ───────────────────────────────────────
-export type NotificationTopic = 'appointmentReminders' | 'appointmentChanges' | 'billing' | 'documents' | 'results' | 'messages';
+export type NotificationTopic = 'appointmentReminders' | 'appointmentChanges' | 'billing' | 'documents' | 'results' | 'prescriptions' | 'messages';
 export type NotificationChannel = 'email' | 'sms';
 export type NotificationPreferences = Readonly<Record<NotificationTopic, Readonly<Record<NotificationChannel, boolean>>>>;
 
@@ -58,6 +58,7 @@ export const NOTIFICATION_TOPICS: ReadonlyArray<{ key: NotificationTopic; label:
   { key: 'billing', label: 'Bills & receipts', description: 'New statements, payment receipts and reminders.' },
   { key: 'documents', label: 'New documents', description: 'When the practice shares a document with you.' },
   { key: 'results', label: 'Test results', description: 'When your doctor releases a result.' },
+  { key: 'prescriptions', label: 'Prescriptions', description: 'Refill approvals and updates.' },
   { key: 'messages', label: 'Messages', description: 'Replies from your care team.' },
 ];
 
@@ -69,6 +70,7 @@ export function defaultNotificationPreferences(): NotificationPreferences {
     billing: on,
     documents: on,
     results: on,
+    prescriptions: { email: true, sms: true },
     messages: on,
   };
 }

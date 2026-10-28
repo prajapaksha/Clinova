@@ -1,0 +1,82 @@
+<div class="nt">
+  <header class="nt__head">
+    <h2>Notification templates</h2>
+    <p>Wording for appointment reminders, bills, receipts and portal notices. Use merge fields to personalize each message.
+      Keep clinical details out of email and text messages — point patients to the portal instead.</p>
+  </header>
+
+  <div class="nt__layout">
+    <nav class="nt__list" aria-label="Notification types">
+      @for (t of types; track t.type) {
+        <button type="button" class="nt__type" [class.is-active]="type() === t.type" (click)="select(t.type)">
+          <span class="nt__label">{{ t.label }}</span>
+          <span class="nt__timing">{{ t.timing }}</span>
+          <span class="nt__tags">
+            @for (c of t.channels; track c) { <span class="nt__chip">{{ channelLabel[c] }}</span> }
+            @if (customCount(t.type)) { <span class="nt__chip nt__chip--custom">Customized</span> }
+            @if (isOff(t.type)) { <span class="nt__chip nt__chip--off">Off</span> }
+          </span>
+        </button>
+      }
+    </nav>
+
+    <section class="nt__editor" aria-live="polite">
+      <div class="nt__tabs" role="tablist" aria-label="Channel">
+        @for (v of channels(); track v.channel) {
+          <button type="button" role="tab" [class.is-active]="channel() === v.channel" [attr.aria-selected]="channel() === v.channel" (click)="select(v.type, v.channel)">
+            {{ channelLabel[v.channel] }}
+          </button>
+        }
+      </div>
+
+      @if (current(); as c) {
+        <p class="nt__meta">
+          {{ spec().timing }}.
+          @if (c.isCustom) { Customized@if (c.updatedByName) { by {{ c.updatedByName }} } {{ c.updatedAt | date:'MMM d, y' }}. } @else { Built-in wording. }
+        </p>
+      }
+
+      @if (!isSms()) {
+        <mat-form-field appearance="outline">
+          <mat-label>{{ channel() === 'PORTAL' ? 'Title' : 'Subject' }}</mat-label>
+          <input matInput [(ngModel)]="subject" (ngModelChange)="changed()" [readonly]="!canEdit()" maxlength="200" />
+        </mat-form-field>
+      }
+      <mat-form-field appearance="outline">
+        <mat-label>Message</mat-label>
+        <textarea matInput #bodyEl rows="9" [(ngModel)]="body" (ngModelChange)="changed()" [readonly]="!canEdit()" maxlength="4000"></textarea>
+      </mat-form-field>
+
+      @if (canEdit()) {
+        <div class="nt__fields" aria-label="Insert merge field">
+          @for (f of fields(); track f.key) {
+            <button type="button" class="nt__field" (click)="insert(f.key)" [title]="f.label">{{ f.token }}</button>
+          }
+        </div>
+      }
+
+      @if (preview(); as p) {
+        <div class="nt__preview">
+          <div class="nt__preview-head">
+            <span>Preview with sample data</span>
+            @if (isSms()) { <span [class.nt__warn]="segments() > 1">{{ p.body.length }} characters · {{ segments() }} SMS segment{{ segments() === 1 ? '' : 's' }}</span> }
+          </div>
+          @if (p.errors.length) { <p class="nt__errors" role="alert">{{ p.errors.join(' ') }}</p> }
+          @if (p.subject) { <p class="nt__psubject">{{ p.subject }}</p> }
+          <pre class="nt__pbody">{{ p.body }}</pre>
+        </div>
+      }
+
+      @if (canEdit()) {
+        <div class="nt__actions">
+          <mat-slide-toggle [(ngModel)]="isActive" (change)="changed()">Send this message</mat-slide-toggle>
+          <span class="nt__spacer"></span>
+          @if (current()?.isCustom) { <button mat-button type="button" [disabled]="busy()" (click)="reset()">Restore default</button> }
+          <button mat-flat-button color="primary" type="button" [disabled]="busy() || !dirty() || !!preview()?.errors?.length" (click)="save()">Save template</button>
+        </div>
+      } @else {
+        <p class="nt__meta">Only practice administrators can edit templates.</p>
+      }
+    </section>
+  </div>
+</div>
