@@ -61,10 +61,72 @@ model Staff {
   lastName     String
   role         String   @default("STAFF")
   isActive     Boolean  @default(true)
+
+  // Profile (PRD §4.3)
+  title         String?
+  suffix        String?
+  phone         String?
+  officeLocation String?
+  npi           String?
+  specialtiesJson String  @default("[]")
+  bio           String?
+  /// Weekly working-hours template (DaySchedule[]).
+  scheduleJson  String   @default("[]")
+
+  // Account security (PRD §5.1)
+  failedLoginAttempts Int       @default(0)
+  lockedUntil         DateTime?
+  lastLoginAt         DateTime?
+  passwordChangedAt   DateTime  @default(now())
+  mfaEnabled          Boolean   @default(false)
+
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
+  credentials StaffCredential[]
+
   @@index([email])
+}
+
+model StaffCredential {
+  id               String    @id @default(cuid())
+  staffId          String
+  type             String
+  number           String
+  issuingState     String?
+  issuingAuthority String?
+  issueDate        DateTime?
+  expirationDate   DateTime?
+  isVerified       Boolean   @default(false)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  staff Staff @relation(fields: [staffId], references: [id], onDelete: Cascade)
+
+  @@index([staffId])
+  @@index([expirationDate])
+}
+
+/// Append-only record of PHI access and security events (PRD §5.1).
+model AuditLog {
+  id           String   @id @default(cuid())
+  userId       String?
+  userName     String?
+  userRole     String?
+  action       String
+  resourceType String
+  resourceId   String?
+  patientId    String?
+  fieldName    String?
+  oldValue     String?
+  newValue     String?
+  ipAddress    String?
+  userAgent    String?
+  createdAt    DateTime @default(now())
+
+  @@index([patientId, createdAt])
+  @@index([userId, createdAt])
+  @@index([createdAt])
 }
 
 model AppointmentType {

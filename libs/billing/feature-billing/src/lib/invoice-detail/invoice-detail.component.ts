@@ -14,7 +14,7 @@ import { Observable, filter, switchMap } from 'rxjs';
 import type { FeeScheduleLine, Invoice, InvoicePayment } from '@clinova/billing/domain';
 import { ClaimStatus, InvoiceStatus, isInvoiceOpen } from '@clinova/billing/domain';
 import { BillingApiService } from '@clinova/billing/data-access';
-import { AuthService } from '@clinova/auth';
+import { Permissions } from '@clinova/auth';
 import { CentsPipe } from '../shared/cents.pipe';
 import { StatusChipComponent } from '../shared/status-chip.component';
 import { BillingPermissions, PAYMENT_METHOD_LABELS, centsFromDollars, errorMessage } from '../shared/billing-shared';
@@ -51,7 +51,7 @@ export class InvoiceDetailComponent {
   private readonly api = inject(BillingApiService);
   private readonly dialog = inject(MatDialog);
   private readonly snack = inject(MatSnackBar);
-  private readonly auth = inject(AuthService);
+  private readonly access = inject(Permissions);
   protected readonly perms = inject(BillingPermissions);
 
   readonly id = input.required<string>();
@@ -68,7 +68,7 @@ export class InvoiceDetailComponent {
     const inv = this.invoice();
     return !!inv && isInvoiceOpen(inv.status);
   });
-  protected readonly isClinical = computed(() => ['PHYSICIAN', 'NURSE', 'ADMIN'].includes(this.auth.currentUser()?.role ?? ''));
+  protected readonly isClinical = computed(() => this.access.can('clinical:notes'));
   protected readonly canFileClaim = computed(() => {
     const inv = this.invoice();
     if (!inv || !this.perms.canManage() || inv.status === InvoiceStatus.Draft || inv.status === InvoiceStatus.Voided) return false;

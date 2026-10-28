@@ -4,7 +4,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { provideRouter, Router } from '@angular/router';
 import { AuthService, StaffUser } from './auth';
 
-const user: StaffUser = { id: 's1', email: 'doc@clinova.test', role: 'DOCTOR', firstName: 'Ada', lastName: 'Lee' };
+const user: StaffUser = { id: 's1', email: 'doc@clinova.test', role: 'PHYSICIAN', firstName: 'Ada', lastName: 'Lee' };
 
 function setup() {
   TestBed.configureTestingModule({
@@ -78,5 +78,33 @@ describe('AuthService', () => {
     expect(restored).toBeNull();
     expect(service.getToken()).toBeNull();
     expect(service.isAuthenticated()).toBe(false);
+  });
+
+  it('clears the expired-password flag after changing the password', () => {
+    const { service, http } = setup();
+    service.login(user.email, 'secret').subscribe();
+    http.expectOne('/api/auth/login').flush({ accessToken: 'tkn', user: { ...user, passwordExpired: true } });
+    expect(service.passwordExpired()).toBe(true);
+
+    service.changePassword('old', 'New-Password-1').subscribe();
+    const req = http.expectOne('/api/auth/change-password');
+    expect(req.request.body).toEqual({ currentPassword: 'old', newPassword: 'New-Password-1' });
+    req.flush(null, { status: 204, statusText: 'No Content' });
+
+    expect(service.passwordExpired()).toBe(false);
+  });
+
+  it('records sign-out on the server before clearing the session', () => {
+    const { service, http, router } = setup();
+    const navigate = vi.spyOn(router, 'navigate').mockResolvedValue(true);
+    service.login(user.email, 'secret').subscribe();
+    http.expectOne('/api/auth/login').flush({ accessToken: 'tkn', user });
+
+    service.signOut('idle');
+    expect(service.isAuthenticated()).toBe(true);
+    http.expectOne('/api/auth/logout').flush(null, { status: 204, statusText: 'No Content' });
+
+    expect(service.isAuthenticated()).toBe(false);
+    expect(navigate).toHaveBeenCalledWith(['/auth/login'], { queryParams: { reason: 'idle' } });
   });
 });

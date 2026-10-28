@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import type { Patient as PrismaPatient } from '@prisma/client';
 import type {
@@ -19,7 +19,9 @@ import type {
   Sex,
 } from '@clinova/patient/domain';
 import { AlertSeverity, AllergyType } from '@clinova/patient/domain';
+import { PATIENT_MEDICAL_FIELDS, hasAccess } from '@clinova/identity/domain';
 import { CreatePatientDto } from './dto/create-patient.dto';
+import { AuditContext, AuditService } from '../audit/audit.service';
 import { randomUUID } from 'crypto';
 
 function toPatient(row: PrismaPatient): Patient {
@@ -146,9 +148,23 @@ function buildInsuranceJson(policies: CreatePatientDto['insurancePolicies']): st
   );
 }
 
+const SCALAR_FIELDS = [
+  'title', 'firstName', 'middleName', 'lastName', 'preferredName',
+  'pronouns', 'sex', 'genderIdentity', 'maritalStatus', 'occupation',
+  'preferredLanguage', 'ethnicity', 'bloodType', 'heightCm', 'weightKg',
+  'photoUrl', 'isVip',
+];
+const AUDITED_FIELDS = [
+  ...SCALAR_FIELDS, 'dateOfBirth', 'contact', 'emergencyContacts', 'insurancePolicies', 'consent',
+  'chronicConditions', 'currentMedications',
+];
+
 @Injectable()
 export class PatientsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly audit: AuditService,
+  ) {}
 
   async search(filters: {
     query?: string;
@@ -237,18 +253,19 @@ export class PatientsService {
     return toPatient(row);
   }
 
-  async update(id: string, updates: Record<string, unknown>): Promise<Patient> {
+  async update(id: string, updates: Record<string, unknown>, ctx: AuditContext): Promise<Patient> {
     const existing = await this.prisma.patient.findUnique({ where: { id } });
     if (!existing) throw new NotFoundException(`Patient ${id} not found`);
+    const before = toPatient(existing) as unknown as Record<string, unknown>;
+
+    // Limited patient access (front desk, billing): demographics, contact and insurance only.
+    if (!hasAccess(ctx.user?.role, 'patient:profiles', 'full')) {
+      const medical = PATIENT_MEDICAL_FIELDS.filter(f => f in updates && JSON.stringify(updates[f] ?? null) !== JSON.stringify(before[f] ?? null));
+      if (medical.length) throw new ForbiddenException(`Your role cannot change medical information (${medical.join(', ')}).`);
+    }
 
     const data: Record<string, unknown> = {};
-    const scalarFields = [
-      'title', 'firstName', 'middleName', 'lastName', 'preferredName',
-      'pronouns', 'sex', 'genderIdentity', 'maritalStatus', 'occupation',
-      'preferredLanguage', 'ethnicity', 'bloodType', 'heightCm', 'weightKg',
-      'photoUrl', 'isVip',
-    ];
-    for (const field of scalarFields) {
+    for (const field of SCALAR_FIELDS) {
       if (field in updates) data[field] = updates[field];
     }
     if ('dateOfBirth' in updates) data['dateOfBirth'] = new Date(updates['dateOfBirth'] as string);
@@ -260,13 +277,20 @@ export class PatientsService {
     if ('currentMedications' in updates) data['currentMedicationsJson'] = JSON.stringify(updates['currentMedications']);
 
     const row = await this.prisma.patient.update({ where: { id }, data });
-    return toPatient(row);
+    const after = toPatient(row);
+    await this.audit.logFieldChanges(
+      ctx,
+      { resourceType: 'Patient', resourceId: id, patientId: id },
+      before,
+      after as unknown as Record<string, unknown>,
+      AUDITED_FIELDS.filter(f => f in updates),
+    );
+    return after;
   }
 
-  async archive(id: string, archivedBy: string): Promise<void> {
+  async archive(id: string): Promise<void> {
     const existing = await this.prisma.patient.findUnique({ where: { id } });
     if (!existing) throw new NotFoundException(`Patient ${id} not found`);
-    void archivedBy;
     await this.prisma.patient.update({
       where: { id },
       data: { isArchived: true, archivedAt: new Date() },

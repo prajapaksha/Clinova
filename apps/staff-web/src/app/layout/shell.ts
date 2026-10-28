@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { Component, computed, DestroyRef, effect, inject, signal, untracked } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatToolbarModule } from '@angular/material/toolbar';
@@ -7,24 +7,35 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatMenuModule } from '@angular/material/menu';
+import { MatDialog, MatDialogRef } from '@angular/material/dialog';
+import type { PermissionRule } from '@clinova/identity/domain';
+import { AuthService, ChangePasswordDialog, ChangePasswordDialogData, IdleTimeout, Permissions } from '@clinova/auth';
 
 export interface NavItem {
   label: string;
   icon: string;
   route: string;
-  roles?: string[];
+  /** Shown when the user satisfies any rule; always shown when omitted. */
+  rules?: PermissionRule[];
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { label: 'Dashboard',        icon: 'dashboard',        route: '/dashboard' },
-  { label: 'Calendar',         icon: 'calendar_month',   route: '/calendar' },
-  { label: 'Patients',         icon: 'people',           route: '/patients' },
-  { label: 'Encounters',       icon: 'assignment',       route: '/encounters' },
-  { label: 'Billing',          icon: 'receipt_long',     route: '/billing' },
-  { label: 'Reports',          icon: 'bar_chart',        route: '/reports' },
-  { label: 'Staff',            icon: 'badge',            route: '/staff' },
-  { label: 'Messages',         icon: 'forum',            route: '/messages' },
-  { label: 'Settings',         icon: 'settings',         route: '/settings' },
+  { label: 'Dashboard',  icon: 'dashboard',      route: '/dashboard' },
+  { label: 'Calendar',   icon: 'calendar_month', route: '/calendar',   rules: [{ capability: 'scheduling:appointments', access: 'read' }] },
+  { label: 'Patients',   icon: 'people',         route: '/patients',   rules: [{ capability: 'patient:profiles', access: 'read' }] },
+  { label: 'Encounters', icon: 'assignment',     route: '/encounters', rules: [{ capability: 'clinical:notes', access: 'read' }] },
+  { label: 'Billing',    icon: 'receipt_long',   route: '/billing',    rules: [{ capability: 'billing:invoices', access: 'read' }] },
+  { label: 'Reports',    icon: 'bar_chart',      route: '/reports',    rules: [{ capability: 'reporting:reports', access: 'read' }] },
+  { label: 'Staff',      icon: 'badge',          route: '/staff',      rules: [{ capability: 'staff:profiles', access: 'read' }] },
+  { label: 'Messages',   icon: 'forum',          route: '/messages' },
+  { label: 'Settings',   icon: 'settings',       route: '/settings',   rules: [{ capability: 'system:settings', access: 'read' }, { capability: 'identity:auditLogs', access: 'read' }] },
+];
+
+const QUICK_CREATE: NavItem[] = [
+  { label: 'New Patient',     icon: 'person_add', route: '/patients/new',         rules: [{ capability: 'patient:profiles', access: 'write' }] },
+  { label: 'New Appointment', icon: 'event',      route: '/calendar/new',         rules: [{ capability: 'scheduling:appointments', access: 'write' }] },
+  { label: 'New Invoice',     icon: 'receipt',    route: '/billing/invoices/new', rules: [{ capability: 'billing:invoices', access: 'full' }] },
+  { label: 'New Encounter',   icon: 'assignment', route: '/encounters/new',       rules: [{ capability: 'clinical:notes', access: 'write' }] },
 ];
 
 @Component({
@@ -61,7 +72,7 @@ const NAV_ITEMS: NavItem[] = [
 
         <!-- Navigation -->
         <nav class="shell-sidebar__nav" aria-label="Main navigation">
-          @for (item of navItems; track item.route) {
+          @for (item of navItems(); track item.route) {
             <a
               class="shell-sidebar__nav-item"
               [routerLink]="item.route"
@@ -108,16 +119,17 @@ const NAV_ITEMS: NavItem[] = [
           <span class="shell-topbar__spacer"></span>
 
           <!-- Quick create -->
-          <button mat-stroked-button [matMenuTriggerFor]="quickCreateMenu" aria-label="Quick create">
-            <mat-icon>add</mat-icon>
-            New
-          </button>
-          <mat-menu #quickCreateMenu="matMenu">
-            <button mat-menu-item routerLink="/patients/new"><mat-icon>person_add</mat-icon>New Patient</button>
-            <button mat-menu-item routerLink="/calendar/new"><mat-icon>event</mat-icon>New Appointment</button>
-            <button mat-menu-item routerLink="/billing/invoices/new"><mat-icon>receipt</mat-icon>New Invoice</button>
-            <button mat-menu-item routerLink="/encounters/new"><mat-icon>assignment</mat-icon>New Encounter</button>
-          </mat-menu>
+          @if (quickCreate().length) {
+            <button mat-stroked-button [matMenuTriggerFor]="quickCreateMenu" aria-label="Quick create">
+              <mat-icon>add</mat-icon>
+              New
+            </button>
+            <mat-menu #quickCreateMenu="matMenu">
+              @for (item of quickCreate(); track item.route) {
+                <button mat-menu-item [routerLink]="item.route"><mat-icon>{{ item.icon }}</mat-icon>{{ item.label }}</button>
+              }
+            </mat-menu>
+          }
 
           <!-- Notifications -->
           <button mat-icon-button aria-label="Notifications"
@@ -132,12 +144,17 @@ const NAV_ITEMS: NavItem[] = [
           </button>
 
           <!-- User menu -->
-          <button mat-icon-button [matMenuTriggerFor]="userMenu" aria-label="User menu">
-            <mat-icon>account_circle</mat-icon>
+          <button mat-button class="shell-user" [matMenuTriggerFor]="userMenu" aria-label="User menu">
+            <span class="shell-user__avatar" aria-hidden="true">{{ initials() }}</span>
+            <span class="shell-user__text">
+              <span class="shell-user__name">{{ userName() }}</span>
+              <span class="shell-user__role">{{ perms.roleLabel() }}</span>
+            </span>
           </button>
-          <mat-menu #userMenu="matMenu">
-            <button mat-menu-item><mat-icon>person</mat-icon>Profile</button>
-            <button mat-menu-item><mat-icon>logout</mat-icon>Sign out</button>
+          <mat-menu #userMenu="matMenu" xPosition="before">
+            <a mat-menu-item [routerLink]="['/staff', user()?.id]"><mat-icon>person</mat-icon>My profile</a>
+            <button mat-menu-item (click)="changePassword()"><mat-icon>key</mat-icon>Change password</button>
+            <button mat-menu-item (click)="auth.signOut()"><mat-icon>logout</mat-icon>Sign out</button>
           </mat-menu>
 
         </mat-toolbar>
@@ -149,13 +166,56 @@ const NAV_ITEMS: NavItem[] = [
 
       </mat-sidenav-content>
     </mat-sidenav-container>
+
+    @if (idle.secondsLeft(); as seconds) {
+      <div class="shell-idle" role="alertdialog" aria-live="assertive" aria-labelledby="idle-title">
+        <div class="shell-idle__card">
+          <mat-icon class="shell-idle__icon">timer</mat-icon>
+          <h2 id="idle-title">Are you still there?</h2>
+          <p>For patient privacy you'll be signed out in <strong>{{ seconds }}</strong> second{{ seconds === 1 ? '' : 's' }}.</p>
+          <div class="shell-idle__actions">
+            <button mat-button (click)="auth.signOut()">Sign out now</button>
+            <button mat-flat-button color="primary" (click)="idle.extend()">Stay signed in</button>
+          </div>
+        </div>
+      </div>
+    }
   `,
   styleUrl: './shell.scss',
 })
 export class ShellComponent {
-  protected readonly navItems = NAV_ITEMS;
+  protected readonly auth = inject(AuthService);
+  protected readonly perms = inject(Permissions);
+  protected readonly idle = inject(IdleTimeout);
+  private readonly dialog = inject(MatDialog);
+
+  protected readonly user = this.auth.currentUser;
+  protected readonly navItems = computed(() => NAV_ITEMS.filter(i => this.visible(i)));
+  protected readonly quickCreate = computed(() => QUICK_CREATE.filter(i => this.visible(i)));
+  protected readonly userName = computed(() => {
+    const u = this.user();
+    return u ? `${this.perms.isProvider() ? 'Dr. ' : ''}${u.firstName} ${u.lastName}` : '';
+  });
+  protected readonly initials = computed(() => {
+    const u = this.user();
+    return u ? `${u.firstName[0] ?? ''}${u.lastName[0] ?? ''}`.toUpperCase() : '';
+  });
   protected readonly collapsed = signal(false);
   protected readonly unreadCount = signal(0);
+
+  private passwordDialog: MatDialogRef<ChangePasswordDialog> | null = null;
+
+  constructor() {
+    this.idle.start(inject(DestroyRef));
+    // A temporary or expired password must be replaced before continuing.
+    effect(() => {
+      if (this.auth.passwordExpired()) untracked(() => this.openPasswordDialog({ required: true }));
+    });
+  }
+
+  protected changePassword(): void {
+    this.openPasswordDialog({});
+  }
 
   protected toggleCollapse(): void {
     this.collapsed.update(v => !v);
@@ -166,5 +226,19 @@ export class ShellComponent {
       event.preventDefault();
       input.focus();
     }
+  }
+
+  private visible(item: NavItem): boolean {
+    return !item.rules || this.perms.canAny(item.rules);
+  }
+
+  private openPasswordDialog(data: ChangePasswordDialogData): void {
+    if (this.passwordDialog) return;
+    this.passwordDialog = this.dialog.open<ChangePasswordDialog, ChangePasswordDialogData>(ChangePasswordDialog, {
+      data,
+      disableClose: !!data.required,
+      autoFocus: 'first-tabbable',
+    });
+    this.passwordDialog.afterClosed().subscribe(() => (this.passwordDialog = null));
   }
 }

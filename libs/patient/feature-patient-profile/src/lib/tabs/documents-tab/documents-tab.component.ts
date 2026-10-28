@@ -3,6 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DatePipe, TitleCasePipe } from '@angular/common';
 import { MatDialog } from '@angular/material/dialog';
 import { PatientApiService, PatientStore } from '@clinova/patient/data-access';
+import { Permissions } from '@clinova/auth';
 import type { PatientId, DocumentId } from '@clinova/patient/domain';
 import { DocumentCategory } from '@clinova/patient/domain';
 import { MatButtonModule } from '@angular/material/button';
@@ -39,6 +40,7 @@ const CATEGORY_ICONS: Record<string, string> = {
 export class DocumentsTab {
   protected readonly store = inject(PatientStore);
   private readonly api = inject(PatientApiService);
+  protected readonly perms = inject(Permissions);
   private readonly dialog = inject(MatDialog);
   private readonly destroyRef = inject(DestroyRef);
 

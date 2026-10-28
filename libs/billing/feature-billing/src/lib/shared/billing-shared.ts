@@ -1,18 +1,16 @@
 import { computed, inject, Injectable } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
-import { AuthService } from '@clinova/auth';
+import { Permissions } from '@clinova/auth';
 import { PaymentMethod } from '@clinova/billing/domain';
 
-/** Role checks mirroring the API (PRD §3.2: invoices & payments). */
+/** Billing capability checks from the shared permission matrix (PRD §3.2: invoices & payments). */
 @Injectable({ providedIn: 'root' })
 export class BillingPermissions {
-  private readonly auth = inject(AuthService);
-  private readonly role = computed(() => this.auth.currentUser()?.role ?? '');
-  readonly canManage = computed(() => ['ADMIN', 'BILLING'].includes(this.role()));
-  readonly canTakePayment = computed(() => ['ADMIN', 'BILLING', 'STAFF'].includes(this.role()));
-  readonly canEditFeeSchedules = computed(() => this.role() === 'ADMIN');
+  private readonly perms = inject(Permissions);
+  readonly canManage = computed(() => this.perms.can('billing:invoices', 'full'));
+  readonly canTakePayment = computed(() => this.perms.can('billing:invoices', 'write'));
+  readonly canEditFeeSchedules = computed(() => this.perms.can('system:settings', 'write'));
 }
-
 export function errorMessage(err: unknown, fallback = 'Something went wrong. Please try again.'): string {
   if (err instanceof HttpErrorResponse) {
     const msg = err.error?.message;

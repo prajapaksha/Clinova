@@ -163,7 +163,7 @@ export interface RosterEntry {
 }
 
 export type DashboardAlertSeverity = 'CRITICAL' | 'WARNING' | 'INFO';
-export type DashboardAlertKind = 'PATIENT_ALERT' | 'LONG_WAIT' | 'UNSIGNED_NOTES' | 'NO_SHOW';
+export type DashboardAlertKind = 'PATIENT_ALERT' | 'LONG_WAIT' | 'UNSIGNED_NOTES' | 'NO_SHOW' | 'CREDENTIAL_EXPIRING';
 
 export interface DashboardAlert {
   readonly id: string;

@@ -8,6 +8,7 @@ const KIND_ICONS: Record<DashboardAlertKind, string> = {
   LONG_WAIT: 'hourglass_bottom',
   UNSIGNED_NOTES: 'edit_note',
   NO_SHOW: 'person_off',
+  CREDENTIAL_EXPIRING: 'verified_user',
 };
 
 @Component({

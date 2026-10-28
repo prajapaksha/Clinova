@@ -10,12 +10,12 @@ import {
   Post,
   Query,
   Request,
-  UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { AuthUser } from '../auth/auth.service';
-import { Roles } from '../auth/decorators/roles.decorator';
-import { RolesGuard } from '../auth/guards/roles.guard';
+import { AuditAction } from '@clinova/identity/domain';
+import { full, Permit, read, write } from '../auth/decorators/permit.decorator';
+import { Audited } from '../audit/audited';
 import { EncountersService } from './encounters.service';
 import {
   AddendumDto,
@@ -29,14 +29,9 @@ import {
 
 type AuthedRequest = { user: AuthUser };
 
-// Clinical notes are visible to clinicians and administrators only (PRD §3.2).
-const CLINICAL_READ_ROLES = ['PHYSICIAN', 'NURSE', 'ADMIN'];
-const CLINICAL_WRITE_ROLES = ['PHYSICIAN', 'NURSE'];
-
 @ApiTags('encounters')
 @ApiBearerAuth()
-@UseGuards(RolesGuard)
-@Roles(...CLINICAL_READ_ROLES)
+@Permit(read('clinical:notes'))
 @Controller()
 export class EncountersController {
   constructor(private readonly encounters: EncountersService) {}
@@ -64,33 +59,38 @@ export class EncountersController {
   }
 
   @Get('encounters/by-appointment/:appointmentId')
+  @Audited({ action: AuditAction.View, resourceType: 'Encounter', resourceId: (_, r) => (r as { id?: string } | null)?.id })
   @ApiOperation({ summary: 'Get the encounter for an appointment (null if not started)' })
   findByAppointment(@Param('appointmentId') appointmentId: string) {
     return this.encounters.findByAppointment(appointmentId);
   }
 
   @Get('encounters/:id')
+  @Audited({ action: AuditAction.View, resourceType: 'Encounter' })
   @ApiOperation({ summary: 'Get encounter by ID' })
   findById(@Param('id') id: string) {
     return this.encounters.findById(id);
   }
 
   @Post('encounters')
-  @Roles(...CLINICAL_WRITE_ROLES)
+  @Permit(write('clinical:notes'))
+  @Audited({ action: AuditAction.Create, resourceType: 'Encounter' })
   @ApiOperation({ summary: 'Begin an encounter (from a checked-in appointment or as a walk-in)' })
   start(@Body() dto: StartEncounterDto, @Request() req: AuthedRequest) {
     return this.encounters.start(dto, req.user);
   }
 
   @Patch('encounters/:id')
-  @Roles(...CLINICAL_WRITE_ROLES)
+  @Permit(write('clinical:notes'))
+  @Audited({ action: AuditAction.Update, resourceType: 'Encounter' })
   @ApiOperation({ summary: 'Update an unsigned note, vitals, or draft status' })
   update(@Param('id') id: string, @Body() dto: UpdateEncounterDto, @Request() req: AuthedRequest) {
     return this.encounters.update(id, dto, req.user);
   }
 
   @Delete('encounters/:id')
-  @Roles(...CLINICAL_WRITE_ROLES)
+  @Permit(write('clinical:notes'))
+  @Audited({ action: AuditAction.Delete, resourceType: 'Encounter' })
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Discard an unsigned encounter' })
   discard(@Param('id') id: string) {
@@ -98,7 +98,8 @@ export class EncountersController {
   }
 
   @Post('encounters/:id/sign')
-  @Roles('PHYSICIAN')
+  @Permit(full('clinical:notes'))
+  @Audited({ action: AuditAction.Sign, resourceType: 'Encounter' })
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Sign and lock the note' })
   sign(@Param('id') id: string, @Request() req: AuthedRequest) {
@@ -106,20 +107,23 @@ export class EncountersController {
   }
 
   @Post('encounters/:id/addenda')
-  @Roles('PHYSICIAN')
+  @Permit(full('clinical:notes'))
+  @Audited({ action: AuditAction.Create, resourceType: 'Addendum', resourceId: req => req.params['id'] })
   @ApiOperation({ summary: 'Add an addendum to a signed note' })
   addAddendum(@Param('id') id: string, @Body() dto: AddendumDto, @Request() req: AuthedRequest) {
     return this.encounters.addAddendum(id, dto.content, req.user);
   }
 
   @Post('encounters/:id/prescriptions')
-  @Roles('PHYSICIAN')
+  @Permit(full('clinical:prescriptions'))
+  @Audited({ action: AuditAction.Create, resourceType: 'Prescription', resourceId: (_, r) => (r as { id?: string }).id })
   @ApiOperation({ summary: 'Issue a prescription (409 if safety alerts are not acknowledged)' })
   issuePrescription(@Param('id') id: string, @Body() dto: IssuePrescriptionDto, @Request() req: AuthedRequest) {
     return this.encounters.issuePrescription(id, dto, req.user);
   }
 
   @Post('prescriptions/check')
+  @Permit(read('clinical:prescriptions'))
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Run allergy and interaction checks for a medication' })
   checkPrescription(@Body() dto: PrescriptionCheckDto) {
@@ -127,7 +131,8 @@ export class EncountersController {
   }
 
   @Patch('prescriptions/:id')
-  @Roles('PHYSICIAN')
+  @Permit(full('clinical:prescriptions'))
+  @Audited({ action: AuditAction.Update, resourceType: 'Prescription' })
   @ApiOperation({ summary: 'Update prescription status (e.g. discontinue)' })
   updatePrescription(@Param('id') id: string, @Body() dto: UpdatePrescriptionDto, @Request() req: AuthedRequest) {
     return this.encounters.updatePrescription(id, dto, req.user);
@@ -140,7 +145,7 @@ export class EncountersController {
   }
 
   @Post('encounter-templates')
-  @Roles('PHYSICIAN', 'ADMIN')
+  @Permit(full('clinical:notes'), write('system:settings'))
   @ApiOperation({ summary: 'Create an encounter template' })
   createTemplate(@Body() dto: CreateTemplateDto, @Request() req: AuthedRequest) {
     return this.encounters.createTemplate(dto, req.user);

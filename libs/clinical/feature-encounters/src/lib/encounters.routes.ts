@@ -1,4 +1,5 @@
 import { Route } from '@angular/router';
+import { requirePermission } from '@clinova/auth';
 
 export const ENCOUNTERS_ROUTES: Route[] = [
   {
@@ -7,6 +8,7 @@ export const ENCOUNTERS_ROUTES: Route[] = [
   },
   {
     path: 'new',
+    canActivate: [requirePermission({ capability: 'clinical:notes', access: 'write' })],
     loadComponent: () => import('./encounter-start/encounter-start.component').then(m => m.EncounterStartComponent),
   },
   {

@@ -13,7 +13,7 @@ import { InvoiceStatus, isInvoiceOpen } from '@clinova/billing/domain';
 import { BillingApiService } from '@clinova/billing/data-access';
 import { CentsPipe, StatusChipComponent, TakePaymentDialog, type TakePaymentDialogData } from '@clinova/billing/feature-billing';
 import { PatientStore } from '@clinova/patient/data-access';
-import { AuthService } from '@clinova/auth';
+import { Permissions } from '@clinova/auth';
 
 @Component({
   selector: 'clv-billing-tab',
@@ -25,15 +25,14 @@ import { AuthService } from '@clinova/auth';
 export class BillingTab {
   protected readonly store = inject(PatientStore);
   private readonly api = inject(BillingApiService);
-  private readonly auth = inject(AuthService);
+  private readonly perms = inject(Permissions);
   private readonly dialog = inject(MatDialog);
   private readonly snack = inject(MatSnackBar);
 
   protected readonly patient = computed(() => this.store.selectedPatient());
-  private readonly role = computed(() => this.auth.currentUser()?.role ?? '');
-  protected readonly canView = computed(() => ['ADMIN', 'BILLING', 'STAFF', 'PHYSICIAN'].includes(this.role()));
-  protected readonly canTakePayment = computed(() => ['ADMIN', 'BILLING', 'STAFF'].includes(this.role()));
-  protected readonly canManage = computed(() => ['ADMIN', 'BILLING'].includes(this.role()));
+  protected readonly canView = computed(() => this.perms.can('billing:invoices'));
+  protected readonly canTakePayment = computed(() => this.perms.can('billing:invoices', 'write'));
+  protected readonly canManage = computed(() => this.perms.can('billing:invoices', 'full'));
 
   protected readonly invoices = signal<Invoice[]>([]);
   protected readonly payments = signal<Payment[]>([]);

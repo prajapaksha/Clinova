@@ -1,0 +1,88 @@
+<div class="al">
+  <header class="al__header">
+    <div>
+      <h2 class="al__title">Audit log</h2>
+      <p class="al__sub">Every view and change of patient information, plus sign-ins and account changes. Entries can't be edited or deleted.</p>
+    </div>
+    <button mat-stroked-button type="button" (click)="exportCsv()" [disabled]="!entries().length">
+      <mat-icon>download</mat-icon> Export page
+    </button>
+  </header>
+
+  @if (patientId()) {
+    <div class="al__scope" role="status">
+      <mat-icon>person_search</mat-icon>
+      <span>Access log for <strong>{{ patientName() ?? 'this patient' }}</strong></span>
+      <a mat-button [routerLink]="['/patients', patientId()]">Open chart</a>
+      <button mat-button type="button" (click)="setQuery('patientId', null)">Show all patients</button>
+    </div>
+  }
+
+  <div class="al__filters">
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>User</mat-label>
+      <mat-select [value]="userId() ?? ''" (selectionChange)="setQuery('userId', $event.value)">
+        <mat-option value="">All users</mat-option>
+        @for (s of staff(); track s.id) { <mat-option [value]="s.id">{{ s.displayName }}</mat-option> }
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Action</mat-label>
+      <mat-select multiple [value]="action()" (selectionChange)="setFilter(action, $event.value)">
+        @for (a of actions; track a.value) { <mat-option [value]="a.value">{{ a.label }}</mat-option> }
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Record type</mat-label>
+      <mat-select [value]="resourceType()" (selectionChange)="setFilter(resourceType, $event.value)">
+        <mat-option value="">All types</mat-option>
+        @for (t of resourceTypes; track t) { <mat-option [value]="t">{{ t }}</mat-option> }
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="al__date">
+      <mat-label>From</mat-label>
+      <input matInput type="date" [value]="from()" (change)="setFilter(from, $any($event.target).value)" />
+    </mat-form-field>
+    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="al__date">
+      <mat-label>To</mat-label>
+      <input matInput type="date" [value]="to()" (change)="setFilter(to, $any($event.target).value)" />
+    </mat-form-field>
+  </div>
+
+  @if (error()) { <p class="al__error" role="alert">{{ error() }}</p> }
+
+  <div class="al__table-wrap">
+    @if (loading()) { <div class="al__loading"><mat-spinner diameter="28" /></div> }
+    <table class="al__table">
+      <thead>
+        <tr><th>Time</th><th>User</th><th>Action</th><th>Record</th><th>Patient</th><th>Details</th><th>From</th></tr>
+      </thead>
+      <tbody>
+        @for (e of entries(); track e.id) {
+          <tr>
+            <td class="al__nowrap">{{ e.createdAt | date:'MMM d, y' }}<br /><small>{{ e.createdAt | date:'h:mm:ss a' }}</small></td>
+            <td>
+              @if (e.userId) {
+                <button type="button" class="al__link" (click)="setQuery('userId', e.userId)">{{ e.userName }}</button>
+              } @else { {{ e.userName || 'Unknown' }} }
+              <br /><small>{{ roleLabel(e.userRole) }}</small>
+            </td>
+            <td><span class="al__action" [attr.data-action]="e.action" [class.al__action--security]="isSecurity(e.action)">{{ actionLabel(e.action) }}</span></td>
+            <td>{{ e.resourceType }}@if (e.resourceId) { <br /><small class="al__mono" [matTooltip]="e.resourceId">{{ e.resourceId.slice(0, 8) }}</small> }</td>
+            <td>
+              @if (e.patientId) {
+                <button type="button" class="al__link" (click)="setQuery('patientId', e.patientId)">{{ e.patientName ?? 'Patient' }}</button>
+              } @else { — }
+            </td>
+            <td class="al__details">{{ change(e) ?? '' }}</td>
+            <td class="al__nowrap"><small [matTooltip]="e.userAgent ?? ''">{{ e.ipAddress ?? '—' }}</small></td>
+          </tr>
+        } @empty {
+          @if (!loading()) { <tr><td colspan="7" class="al__empty">No audit entries match these filters.</td></tr> }
+        }
+      </tbody>
+    </table>
+    <mat-paginator [length]="total()" [pageIndex]="pageIndex()" [pageSize]="pageSize()" [pageSizeOptions]="[25, 50, 100, 200]"
+                   (page)="onPage($event)" aria-label="Audit log pages" />
+  </div>
+</div>

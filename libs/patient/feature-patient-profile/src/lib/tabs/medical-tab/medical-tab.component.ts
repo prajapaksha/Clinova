@@ -2,6 +2,7 @@ import { Component, computed, DestroyRef, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatDialog } from '@angular/material/dialog';
 import { PatientApiService, PatientStore } from '@clinova/patient/data-access';
+import { Permissions } from '@clinova/auth';
 import type { AllergyId, PatientId } from '@clinova/patient/domain';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -21,6 +22,9 @@ import { AddAllergyDialog } from '../../dialogs/add-allergy-dialog/add-allergy-d
 export class MedicalTab {
   protected readonly store = inject(PatientStore);
   private readonly api = inject(PatientApiService);
+  /** Allergies drive medication-safety checks: clinical (full-access) roles only. */
+  private readonly perms = inject(Permissions);
+  protected readonly canEditAllergies = computed(() => this.perms.can('patient:profiles', 'full'));
   private readonly dialog = inject(MatDialog);
   private readonly destroyRef = inject(DestroyRef);
 

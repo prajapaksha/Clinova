@@ -1,7 +1,7 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { catchError, map, Observable, of, tap } from 'rxjs';
+import { catchError, finalize, map, Observable, of, tap } from 'rxjs';
 
 export interface StaffUser {
   id: string;
@@ -9,6 +9,10 @@ export interface StaffUser {
   role: string;
   firstName: string;
   lastName: string;
+  /** Password older than the 90-day policy, or a temporary password set by an admin. */
+  passwordExpired?: boolean;
+  lastLoginAt?: string | null;
+  mfaEnabled?: boolean;
 }
 
 const TOKEN_KEY = 'clv_access_token';
@@ -21,6 +25,7 @@ export class AuthService {
   private readonly _user = signal<StaffUser | null>(null);
   readonly currentUser = this._user.asReadonly();
   readonly isAuthenticated = computed(() => this._user() !== null);
+  readonly passwordExpired = computed(() => !!this._user()?.passwordExpired);
 
   // Call from an app initializer, not the constructor: the HTTP interceptor injects
   // AuthService, so a request during construction hits a circular-DI error.
@@ -45,9 +50,29 @@ export class AuthService {
     );
   }
 
-  logout(): void {
+  changePassword(currentPassword: string, newPassword: string): Observable<void> {
+    return this.http.post<void>('/api/auth/change-password', { currentPassword, newPassword }).pipe(
+      tap(() => this._user.update(u => (u ? { ...u, passwordExpired: false } : u))),
+    );
+  }
+
+  /** User-initiated sign-out: records it in the audit log, then clears the session. */
+  signOut(reason?: 'idle'): void {
+    if (!this.getToken()) {
+      this.logout(reason);
+      return;
+    }
+    this.http.post<void>('/api/auth/logout', {}).pipe(
+      catchError(() => of(undefined)),
+      finalize(() => this.logout(reason)),
+    ).subscribe();
+  }
+
+  /** Clears the local session without calling the API (e.g. after a 401). */
+  logout(reason?: 'idle'): void {
     this.clearSession();
-    this.router.navigate(['/auth/login']);
+    if (reason) this.router.navigate(['/auth/login'], { queryParams: { reason } });
+    else this.router.navigate(['/auth/login']);
   }
 
   getToken(): string | null {

@@ -6,6 +6,7 @@
         <h2 class="doc__title">Documents</h2>
         <p class="doc__subtitle">{{ p.documents.length }} file(s)</p>
       </div>
+      @if (perms.can('patient:profiles', 'write')) {
       <button mat-flat-button [disabled]="uploading()" class="doc__upload-btn">
         @if (uploading()) {
           <mat-spinner diameter="18" />
@@ -16,6 +17,7 @@
                  (change)="onFileSelected($event)">
         }
       </button>
+      }
     </div>
 
     <!-- Category Filter -->
@@ -40,12 +42,14 @@
         <mat-icon class="doc__empty-icon">folder_open</mat-icon>
         <p>No documents uploaded yet.</p>
         <p class="doc__hint">Supported formats: PDF, JPG, PNG.</p>
+        @if (perms.can('patient:profiles', 'write')) {
         <button mat-stroked-button class="doc__upload-btn">
           <mat-icon>upload</mat-icon> Upload first document
           <input type="file" class="doc__file-input"
                  accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
                  (change)="onFileSelected($event)">
         </button>
+        }
       </div>
     } @else {
       <div class="doc__grid">
@@ -62,14 +66,16 @@
                 <span>{{ d.uploadedAt | date:'mediumDate' }}</span>
               </div>
             </div>
-            <button mat-icon-button class="doc__card-more" [matMenuTriggerFor]="docMenu">
-              <mat-icon>more_vert</mat-icon>
-            </button>
-            <mat-menu #docMenu>
-              <button mat-menu-item (click)="removeDocument(p.id, d.id)">
-                <mat-icon>delete_outline</mat-icon> Remove
+            @if (perms.can('patient:profiles', 'full')) {
+              <button mat-icon-button class="doc__card-more" [matMenuTriggerFor]="docMenu" aria-label="Document actions">
+                <mat-icon>more_vert</mat-icon>
               </button>
-            </mat-menu>
+              <mat-menu #docMenu>
+                <button mat-menu-item (click)="removeDocument(p.id, d.id)">
+                  <mat-icon>delete_outline</mat-icon> Remove
+                </button>
+              </mat-menu>
+            }
           </div>
         }
       </div>

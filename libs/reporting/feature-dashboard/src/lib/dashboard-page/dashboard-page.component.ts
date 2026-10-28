@@ -14,7 +14,7 @@ import { NO_SHOW_RATE_TARGET, trendPercent } from '@clinova/reporting/domain';
 import { ReportingApiService } from '@clinova/reporting/data-access';
 import { SchedulingApiService } from '@clinova/scheduling/data-access';
 import type { AppointmentId } from '@clinova/scheduling/domain';
-import { AuthService } from '@clinova/auth';
+import { AuthService, Permissions } from '@clinova/auth';
 import { RosterTableComponent, type RosterAction } from '../roster-table/roster-table.component';
 import { AlertsPanelComponent } from '../alerts-panel/alerts-panel.component';
 import { WeeklyVolumeComponent } from '../weekly-volume/weekly-volume.component';
@@ -41,9 +41,11 @@ export class DashboardPage {
   private readonly snack = inject(MatSnackBar);
 
   protected readonly user = this.auth.currentUser;
-  protected readonly isPhysician = computed(() => this.user()?.role === 'PHYSICIAN');
-  protected readonly isClinical = computed(() => ['PHYSICIAN', 'NURSE', 'ADMIN'].includes(this.user()?.role ?? ''));
-  protected readonly scope = signal<Scope>(this.auth.currentUser()?.role === 'PHYSICIAN' ? 'mine' : 'practice');
+  private readonly perms = inject(Permissions);
+  protected readonly isPhysician = this.perms.isProvider;
+  /** May begin and open encounters from the roster. */
+  protected readonly isClinical = computed(() => this.perms.can('clinical:notes', 'write'));
+  protected readonly scope = signal<Scope>(this.perms.isProvider() ? 'mine' : 'practice');
 
   protected readonly summary = signal<DashboardSummary | null>(null);
   protected readonly loading = signal(false);
@@ -58,7 +60,7 @@ export class DashboardPage {
     const part = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
     const u = this.user();
     if (!u) return part;
-    return `${part}, ${u.role === 'PHYSICIAN' ? 'Dr. ' + u.lastName : u.firstName}`;
+    return `${part}, ${this.perms.isProvider() ? 'Dr. ' + u.lastName : u.firstName}`;
   });
 
   protected readonly appointmentTrend = computed(() => {

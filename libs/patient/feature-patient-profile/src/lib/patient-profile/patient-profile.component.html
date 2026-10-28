@@ -74,24 +74,33 @@
     </div>
 
     <div class="pp__actions">
+      @if (perms.can('scheduling:appointments', 'write')) {
       <button mat-stroked-button
               [routerLink]="['/calendar']"
               [queryParams]="{ patientId: patient()!.id }">
         <mat-icon>event</mat-icon>
         Book Appointment
       </button>
+      }
       <button mat-icon-button [matMenuTriggerFor]="moreMenu" matTooltip="More actions">
         <mat-icon>more_vert</mat-icon>
       </button>
       <mat-menu #moreMenu>
-        <button mat-menu-item (click)="openEditDemographics()">
-          <mat-icon>edit</mat-icon> Edit demographics
-        </button>
+        @if (perms.can('patient:profiles', 'write')) {
+          <button mat-menu-item (click)="openEditDemographics()">
+            <mat-icon>edit</mat-icon> Edit demographics
+          </button>
+        }
         <button mat-menu-item>
           <mat-icon>merge_type</mat-icon> Merge duplicate records
         </button>
+        @if (perms.can('identity:auditLogs')) {
+          <a mat-menu-item routerLink="/settings/audit-log" [queryParams]="{ patientId: patient()!.id }">
+            <mat-icon>policy</mat-icon> Access log
+          </a>
+        }
         <mat-divider />
-        @if (!patient()!.isArchived) {
+        @if (!patient()!.isArchived && perms.can('patient:profiles', 'full')) {
           <button mat-menu-item class="pp__menu-danger" (click)="confirmingArchive.set(true)">
             <mat-icon>archive</mat-icon> Archive patient
           </button>
@@ -120,12 +129,16 @@
         <span class="pp__tab-count">{{ patient()!.documents.length }}</span>
       }
     </a>
-    <a mat-tab-link routerLink="billing" routerLinkActive #bil="routerLinkActive" [active]="bil.isActive">
-      <mat-icon class="pp__tab-icon">receipt_long</mat-icon> Billing
-    </a>
-    <a mat-tab-link routerLink="notes" routerLinkActive #notes="routerLinkActive" [active]="notes.isActive">
-      <mat-icon class="pp__tab-icon">assignment</mat-icon> Notes
-    </a>
+    @if (perms.can('billing:invoices')) {
+      <a mat-tab-link routerLink="billing" routerLinkActive #bil="routerLinkActive" [active]="bil.isActive">
+        <mat-icon class="pp__tab-icon">receipt_long</mat-icon> Billing
+      </a>
+    }
+    @if (perms.can('clinical:notes')) {
+      <a mat-tab-link routerLink="notes" routerLinkActive #notes="routerLinkActive" [active]="notes.isActive">
+        <mat-icon class="pp__tab-icon">assignment</mat-icon> Notes
+      </a>
+    }
   </nav>
   <mat-tab-nav-panel #tabPanel>
     <router-outlet />

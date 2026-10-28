@@ -1,0 +1,34 @@
+.al__header { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; }
+.al__title { margin: 0; font-size: 1.15rem; }
+.al__sub { margin: 4px 0 0; color: var(--clv-gray-600); font-size: 0.875rem; }
+.al__scope {
+  display: flex; align-items: center; gap: 8px; margin-top: 16px; padding: 8px 12px;
+  background: var(--clv-info-bg); color: var(--clv-info-text); border-radius: 8px;
+  span { flex: 1; }
+}
+.al__filters { display: flex; flex-wrap: wrap; gap: 12px; margin: 16px 0; }
+.al__filters .mat-mdc-form-field { width: 200px; }
+.al__filters .al__date { width: 160px; }
+.al__error { color: var(--clv-danger-text); }
+.al__table-wrap { position: relative; background: #fff; border: 1px solid var(--clv-gray-200); border-radius: 12px; overflow: auto; }
+.al__loading { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(255, 255, 255, 0.6); z-index: 1; }
+.al__table {
+  width: 100%; border-collapse: collapse; font-size: 0.84rem;
+  th { padding: 10px 12px; text-align: left; font-size: 0.72rem; text-transform: uppercase; color: var(--clv-gray-600); border-bottom: 1px solid var(--clv-gray-200); }
+  td { padding: 8px 12px; border-bottom: 1px solid var(--clv-gray-100); vertical-align: top; }
+  small { color: var(--clv-gray-600); }
+}
+.al__nowrap { white-space: nowrap; }
+.al__mono { font-family: 'Roboto Mono', ui-monospace, monospace; }
+.al__details { max-width: 360px; overflow-wrap: anywhere; color: var(--clv-gray-700); }
+.al__link { padding: 0; border: 0; background: none; color: var(--clv-primary-700); font: inherit; cursor: pointer; text-align: left; }
+.al__link:hover { text-decoration: underline; }
+.al__action {
+  display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; white-space: nowrap;
+  background: var(--clv-gray-100); color: var(--clv-gray-700);
+  &[data-action='CREATE'], &[data-action='SIGN'] { background: var(--clv-success-bg); color: var(--clv-success-text); }
+  &[data-action='UPDATE'] { background: var(--clv-info-bg); color: var(--clv-info-text); }
+  &[data-action='DELETE'] { background: var(--clv-warning-bg); color: var(--clv-warning-text); }
+}
+.al__action--security { background: var(--clv-danger-bg) !important; color: var(--clv-danger-text) !important; }
+.al__empty { text-align: center; color: var(--clv-gray-600); padding: 32px !important; }

@@ -1,6 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
+import { AuthService } from '../auth.service';
 
 export interface JwtPayload {
   sub: string;
@@ -12,7 +13,7 @@ export interface JwtPayload {
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor() {
+  constructor(private readonly auth: AuthService) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
@@ -20,7 +21,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  validate(payload: JwtPayload) {
-    return { id: payload.sub, email: payload.email, role: payload.role, firstName: payload.firstName, lastName: payload.lastName };
+  /** Re-reads the account so deactivation and role changes take effect on the next request. */
+  async validate(payload: JwtPayload) {
+    const user = await this.auth.activeUser(payload.sub);
+    if (!user) throw new UnauthorizedException('Your account is no longer active.');
+    return user;
   }
 }

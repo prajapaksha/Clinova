@@ -55,7 +55,8 @@
     margin: 0 0 24px;
   }
 
-  &__error {
+  &__error,
+  &__notice {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -88,5 +89,11 @@
     font-size: 0.75rem;
     color: #9ca3af;
     margin: 28px 0 0;
+  }
+
+  &__notice {
+    background: rgba(37, 99, 235, 0.08);
+    border-color: rgba(37, 99, 235, 0.25);
+    color: #1d4ed8;
   }
 }

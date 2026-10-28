@@ -34,6 +34,7 @@ import {
   isEncounterEditable,
   signingBlockers,
 } from '@clinova/clinical/domain';
+import { isProviderRole } from '@clinova/identity/domain';
 import { PrismaService } from '../prisma/prisma.service';
 import { DomainEventBus } from '../events/domain-event-bus';
 import type { AuthUser } from '../auth/auth.service';
@@ -48,8 +49,6 @@ import {
 import { ICD10_CODES, Icd10Entry } from './reference/icd10.data';
 import { DRUG_CATALOG } from './reference/drugs.data';
 import { PatientAllergyInput, runSafetyChecks } from './medication-safety';
-
-export const PRESCRIBER_ROLES = ['PHYSICIAN'];
 
 export interface EncounterListFilters {
   patientId?: string;
@@ -141,7 +140,7 @@ export class EncountersService {
     const patient = await this.prisma.patient.findUnique({ where: { id: dto.patientId }, select: { id: true } });
     if (!patient) throw new NotFoundException(`Patient ${dto.patientId} not found`);
 
-    let providerId = dto.providerId ?? (PRESCRIBER_ROLES.includes(user.role) ? user.id : undefined);
+    let providerId = dto.providerId ?? (isProviderRole(user.role) ? user.id : undefined);
 
     if (dto.appointmentId) {
       const appointment = await this.prisma.appointment.findUnique({ where: { id: dto.appointmentId } });
@@ -432,7 +431,7 @@ export class EncountersService {
   }
 
   private assertPrescriber(user: AuthUser, action: string): void {
-    if (!PRESCRIBER_ROLES.includes(user.role)) {
+    if (!isProviderRole(user.role)) {
       throw new ForbiddenException(`Only physicians can ${action}.`);
     }
   }

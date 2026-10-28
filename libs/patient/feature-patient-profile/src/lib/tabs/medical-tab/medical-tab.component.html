@@ -39,11 +39,13 @@
                 <div class="med__allergy-top">
                   <strong>{{ a.allergen }}</strong>
                   <span class="med__severity" [attr.data-severity]="a.severity">{{ a.severity }}</span>
-                  <button mat-icon-button class="med__allergy-del"
-                          matTooltip="Remove allergy"
-                          (click)="removeAllergy(p.id, a.id)">
-                    <mat-icon>delete_outline</mat-icon>
-                  </button>
+                  @if (canEditAllergies()) {
+                    <button mat-icon-button class="med__allergy-del"
+                            matTooltip="Remove allergy"
+                            (click)="removeAllergy(p.id, a.id)">
+                      <mat-icon>delete_outline</mat-icon>
+                    </button>
+                  }
                 </div>
                 <div class="med__allergy-meta">
                   <span class="med__tag">{{ a.type }}</span>
@@ -55,11 +57,13 @@
           </div>
         }
       </mat-card-content>
-      <mat-card-actions>
-        <button mat-button (click)="openAddAllergy(p.id)">
-          <mat-icon>add</mat-icon> Add Allergy
-        </button>
-      </mat-card-actions>
+      @if (canEditAllergies()) {
+        <mat-card-actions>
+          <button mat-button (click)="openAddAllergy(p.id)">
+            <mat-icon>add</mat-icon> Add Allergy
+          </button>
+        </mat-card-actions>
+      }
     </mat-card>
 
     <!-- Chronic Conditions -->

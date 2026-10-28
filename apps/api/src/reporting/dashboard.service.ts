@@ -13,6 +13,8 @@ import {
   peakWindow,
   sortAlerts,
 } from '@clinova/reporting/domain';
+import { hasAccess } from '@clinova/identity/domain';
+import { CREDENTIAL_TYPE_LABELS, CredentialType, credentialExpiryStatus, daysUntil, displayName } from '@clinova/staff/domain';
 import { PrismaService } from '../prisma/prisma.service';
 import type { AuthUser } from '../auth/auth.service';
 import { LocalClock } from '../common/local-clock';
@@ -25,7 +27,8 @@ export interface DashboardQuery {
   providerId?: string;
 }
 
-const CLINICAL_ROLES = ['PHYSICIAN', 'NURSE', 'ADMIN'];
+/** Credential alerts surface on the dashboard this many days before expiry. */
+const CREDENTIAL_ALERT_WINDOW_DAYS = 30;
 const NOT_SCHEDULED = ['CANCELLED', 'RESCHEDULED'];
 const ARRIVED = ['CHECKED_IN', 'IN_PROGRESS', 'COMPLETED'];
 const UNSIGNED = ['DRAFT', 'IN_PROGRESS'];
@@ -47,7 +50,9 @@ export class DashboardService {
     const dayEnd = new Date(dayStart.getTime() + DAY_MS);
     const weekStart = new Date(dayStart.getTime() - 6 * DAY_MS);
     const providerFilter = query.providerId ? { providerId: query.providerId } : {};
-    const canSeeClinical = CLINICAL_ROLES.includes(user.role);
+    const canSeeClinical = hasAccess(user.role, 'clinical:notes', 'read');
+    const canWriteClinical = hasAccess(user.role, 'clinical:notes', 'write');
+    const credentialAlerts = hasAccess(user.role, 'staff:profiles', 'full') ? await this.credentialAlerts(now) : [];
 
     const [today, lastWeekCount, week, history30d, unsigned] = await Promise.all([
       this.prisma.appointment.findMany({
@@ -135,7 +140,7 @@ export class DashboardService {
       providerId: query.providerId ?? null,
       kpis,
       roster,
-      alerts: sortAlerts(this.buildAlerts(roster, patients, kpis, clock, now, canSeeClinical)),
+      alerts: sortAlerts([...this.buildAlerts(roster, patients, kpis, clock, now, canWriteClinical), ...credentialAlerts]),
       weeklyVolume,
       peakHours: peakWindow(week.map(a => clock.hour(a.slotStart))),
       generatedAt: now.toISOString(),
@@ -148,7 +153,7 @@ export class DashboardService {
     kpis: DashboardKpis,
     clock: LocalClock,
     now: Date,
-    canSeeClinical: boolean,
+    canWriteClinical: boolean,
   ): DashboardAlert[] {
     const alerts: DashboardAlert[] = [];
 
@@ -177,7 +182,7 @@ export class DashboardService {
             severity: 'WARNING',
             title: `Waiting ${formatDuration(waited)}`,
             detail: `${r.patientName} checked in at ${clock.time(new Date(r.checkedInAt))} for ${r.providerName}.`,
-            ...(canSeeClinical
+            ...(canWriteClinical
               ? {
                   link: ['/encounters/new'],
                   queryParams: { appointmentId: r.appointmentId, patientId: r.patientId },
@@ -215,6 +220,34 @@ export class DashboardService {
     }
 
     return alerts;
+  }
+
+  /** Staff credentials expired or expiring within the alert window (PRD §4.3). */
+  private async credentialAlerts(now: Date): Promise<DashboardAlert[]> {
+    const rows = await this.prisma.staffCredential.findMany({
+      where: {
+        expirationDate: { lte: new Date(now.getTime() + CREDENTIAL_ALERT_WINDOW_DAYS * DAY_MS) },
+        staff: { isActive: true },
+      },
+      include: { staff: true },
+      orderBy: { expirationDate: 'asc' },
+    });
+    return rows.map(c => {
+      const status = credentialExpiryStatus(c.expirationDate, now);
+      const days = daysUntil(c.expirationDate, now) ?? 0;
+      const label = CREDENTIAL_TYPE_LABELS[c.type as CredentialType] ?? c.type;
+      const when = days < 0 ? `expired ${-days} day${days === -1 ? '' : 's'} ago` : days === 0 ? 'expires today' : `expires in ${days} day${days === 1 ? '' : 's'}`;
+      return {
+        id: `credential-${c.id}`,
+        kind: 'CREDENTIAL_EXPIRING' as const,
+        severity: status === 'EXPIRED' || status === 'DUE_7' ? 'CRITICAL' as const : 'WARNING' as const,
+        title: `${displayName(c.staff)} · ${label}`,
+        detail: `${label} ${c.number} ${when}.`,
+        link: ['/staff', c.staffId],
+        queryParams: { tab: 'credentials' },
+        actionLabel: 'Review credential',
+      };
+    });
   }
 
   private async patientFlags(ids: string[]): Promise<Map<string, PatientFlags>> {

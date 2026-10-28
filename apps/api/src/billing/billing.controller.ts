@@ -10,12 +10,12 @@ import {
   Put,
   Query,
   Request,
-  UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { AuthUser } from '../auth/auth.service';
-import { Roles } from '../auth/decorators/roles.decorator';
-import { RolesGuard } from '../auth/guards/roles.guard';
+import { AuditAction } from '@clinova/identity/domain';
+import { full, Permit, read, write } from '../auth/decorators/permit.decorator';
+import { Audited } from '../audit/audited';
 import { DashboardQueryDto } from '../reporting/dashboard.controller';
 import { InvoicesService } from './invoices.service';
 import { ClaimsService } from './claims.service';
@@ -34,15 +34,10 @@ import {
 
 type AuthedRequest = { user: AuthUser };
 
-// PRD §3.2 — Invoices & payments: Admin/Billing full, Doctor read, Front desk limited (collect payments).
-const BILLING_ADMIN = ['ADMIN', 'BILLING'];
-const INVOICE_READERS = ['ADMIN', 'BILLING', 'STAFF', 'PHYSICIAN'];
-const PAYMENT_TAKERS = ['ADMIN', 'BILLING', 'STAFF'];
-
 @ApiTags('billing')
 @ApiBearerAuth()
-@UseGuards(RolesGuard)
-@Roles(...BILLING_ADMIN)
+// PRD §3.2 — Invoices & payments: Admin/Billing full, Doctor read, Front desk limited (collect payments).
+@Permit(full('billing:invoices'))
 @Controller()
 export class BillingController {
   constructor(
@@ -61,7 +56,8 @@ export class BillingController {
   }
 
   @Get('billing/statements/:patientId')
-  @Roles(...PAYMENT_TAKERS)
+  @Permit(write('billing:invoices'))
+  @Audited({ action: AuditAction.View, resourceType: 'Statement', resourceId: req => req.params['patientId'], patientId: req => req.params['patientId'] })
   @ApiOperation({ summary: 'Patient statement of open invoices' })
   statement(@Param('patientId') patientId: string) {
     return this.invoices.statement(patientId);
@@ -70,7 +66,7 @@ export class BillingController {
   // ── Invoices ───────────────────────────────────────────────────────────────
 
   @Get('invoices')
-  @Roles(...INVOICE_READERS)
+  @Permit(read('billing:invoices'))
   @ApiOperation({ summary: 'List invoices (status is derived, e.g. OVERDUE)' })
   findMany(
     @Query('patientId') patientId?: string,
@@ -90,13 +86,14 @@ export class BillingController {
   }
 
   @Get('invoices/by-encounter/:encounterId')
-  @Roles(...INVOICE_READERS)
+  @Permit(read('billing:invoices'))
   findByEncounter(@Param('encounterId') encounterId: string) {
     return this.invoices.findByEncounter(encounterId);
   }
 
   @Get('invoices/:id')
-  @Roles(...INVOICE_READERS)
+  @Permit(read('billing:invoices'))
+  @Audited({ action: AuditAction.View, resourceType: 'Invoice' })
   findById(@Param('id') id: string) {
     return this.invoices.findById(id);
   }
@@ -141,13 +138,14 @@ export class BillingController {
   // ── Payments ───────────────────────────────────────────────────────────────
 
   @Get('payments')
-  @Roles(...PAYMENT_TAKERS)
+  @Permit(write('billing:invoices'))
   listPayments(@Query('patientId') patientId?: string, @Query('limit') limit?: string) {
     return this.invoices.listPayments({ patientId, limit: limit ? parseInt(limit, 10) : undefined });
   }
 
   @Post('payments')
-  @Roles(...PAYMENT_TAKERS)
+  @Permit(write('billing:invoices'))
+  @Audited({ action: AuditAction.Create, resourceType: 'Payment' })
   @ApiOperation({ summary: 'Take a payment; applied to open invoices oldest-first unless invoiceIds are given' })
   takePayment(@Body() dto: TakePaymentDto, @Request() req: AuthedRequest) {
     return this.invoices.takePayment(dto, req.user);
@@ -181,25 +179,25 @@ export class BillingController {
   // ── Fee schedules ──────────────────────────────────────────────────────────
 
   @Get('fee-schedules')
-  @Roles(...INVOICE_READERS)
+  @Permit(read('billing:invoices'))
   listFeeSchedules(@Query('activeOnly') activeOnly?: string) {
     return this.feeSchedules.findAll(activeOnly !== 'false');
   }
 
   @Get('fee-schedules/:id')
-  @Roles(...INVOICE_READERS)
+  @Permit(read('billing:invoices'))
   getFeeSchedule(@Param('id') id: string) {
     return this.feeSchedules.findById(id);
   }
 
   @Post('fee-schedules')
-  @Roles('ADMIN')
+  @Permit(write('system:settings'))
   createFeeSchedule(@Body() dto: SaveFeeScheduleDto) {
     return this.feeSchedules.create(dto);
   }
 
   @Put('fee-schedules/:id')
-  @Roles('ADMIN')
+  @Permit(write('system:settings'))
   updateFeeSchedule(@Param('id') id: string, @Body() dto: SaveFeeScheduleDto) {
     return this.feeSchedules.update(id, dto);
   }

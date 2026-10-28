@@ -29,7 +29,7 @@ import {
 import { ClinicalApiService, type SoapNotePatch } from '@clinova/clinical/data-access';
 import type { Patient, PatientId } from '@clinova/patient/domain';
 import { PatientApiService } from '@clinova/patient/data-access';
-import { AuthService } from '@clinova/auth';
+import { Permissions } from '@clinova/auth';
 import { EncounterContextComponent } from '../encounter-context/encounter-context.component';
 import { PrescriptionDialog, type PrescriptionDialogData } from '../prescription-dialog/prescription-dialog.component';
 import { AddendumDialog } from '../addendum-dialog/addendum-dialog.component';
@@ -105,7 +105,7 @@ type PartialFormValue = { [K in keyof EncounterFormValue]?: Partial<EncounterFor
 export class EncounterEditorComponent {
   private readonly api = inject(ClinicalApiService);
   private readonly patientApi = inject(PatientApiService);
-  private readonly auth = inject(AuthService);
+  private readonly perms = inject(Permissions);
   private readonly dialog = inject(MatDialog);
   private readonly snack = inject(MatSnackBar);
   private readonly router = inject(Router);
@@ -137,11 +137,14 @@ export class EncounterEditorComponent {
   private readonly formValue = toSignal(this.form.valueChanges, { initialValue: this.form.getRawValue() });
   private patching = false;
 
-  protected readonly editable = computed(() => {
+  /** Not yet signed. */
+  protected readonly isOpen = computed(() => {
     const enc = this.encounter();
     return !!enc && isEncounterEditable(enc.status);
   });
-  protected readonly isPhysician = computed(() => this.auth.currentUser()?.role === 'PHYSICIAN');
+  /** Open and the user may document (practice admins have read-only access to notes). */
+  protected readonly editable = computed(() => this.isOpen() && this.perms.can('clinical:notes', 'write'));
+  protected readonly isPhysician = this.perms.isProvider;
   protected readonly blockers = computed(() => signingBlockers(this.buildNote(this.formValue(), this.diagnoses())));
   protected readonly bmi = computed(() => {
     const v = this.formValue().vitals ?? {};

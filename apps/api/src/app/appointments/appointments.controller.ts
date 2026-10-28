@@ -10,6 +10,7 @@ import {
   Query,
 } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Permit, read, write } from '../../auth/decorators/permit.decorator';
 import { AppointmentsService } from './appointments.service';
 import {
   BookAppointmentDto,
@@ -18,6 +19,7 @@ import {
 } from './dto/book-appointment.dto';
 
 @ApiTags('appointments')
+@Permit(read('scheduling:appointments'))
 @Controller()
 export class AppointmentsController {
   constructor(private readonly appointments: AppointmentsService) {}
@@ -74,18 +76,21 @@ export class AppointmentsController {
   }
 
   @Post('appointments')
+  @Permit(write('scheduling:appointments'))
   @ApiOperation({ summary: 'Book a new appointment' })
   create(@Body() dto: BookAppointmentDto) {
     return this.appointments.create(dto);
   }
 
   @Patch('appointments/:id')
+  @Permit(write('scheduling:appointments'))
   @ApiOperation({ summary: 'Update an appointment' })
   update(@Param('id') id: string, @Body() dto: UpdateAppointmentDto) {
     return this.appointments.update(id, dto);
   }
 
   @Post('appointments/:id/check-in')
+  @Permit(write('scheduling:appointments'))
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Check in a patient for their appointment' })
   checkIn(@Param('id') id: string) {
@@ -93,6 +98,7 @@ export class AppointmentsController {
   }
 
   @Post('appointments/:id/cancel')
+  @Permit(write('scheduling:appointments'))
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Cancel an appointment' })
   cancel(@Param('id') id: string, @Body() dto: CancelAppointmentDto) {
@@ -100,6 +106,7 @@ export class AppointmentsController {
   }
 
   @Post('appointments/:id/no-show')
+  @Permit(write('scheduling:appointments'))
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Mark appointment as no-show' })
   noShow(@Param('id') id: string) {

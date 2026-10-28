@@ -14,7 +14,7 @@ import type { EncounterTemplate, TemplateId } from '@clinova/clinical/domain';
 import { ClinicalApiService } from '@clinova/clinical/data-access';
 import type { Patient, PatientId } from '@clinova/patient/domain';
 import { PatientApiService } from '@clinova/patient/data-access';
-import { AuthService } from '@clinova/auth';
+import { Permissions } from '@clinova/auth';
 import { errorMessage } from '../error-message';
 
 /**
@@ -121,7 +121,7 @@ import { errorMessage } from '../error-message';
 export class EncounterStartComponent {
   private readonly api = inject(ClinicalApiService);
   private readonly patientApi = inject(PatientApiService);
-  private readonly auth = inject(AuthService);
+  private readonly perms = inject(Permissions);
   private readonly router = inject(Router);
 
   readonly appointmentId = input<string>();
@@ -138,7 +138,7 @@ export class EncounterStartComponent {
   protected readonly providerId = new FormControl<string | null>(null);
   protected readonly templateId = new FormControl<TemplateId | null>(null);
 
-  protected readonly isPhysician = computed(() => this.auth.currentUser()?.role === 'PHYSICIAN');
+  protected readonly isPhysician = this.perms.isProvider;
   protected readonly backLink = computed(() =>
     this.patientId() ? ['/patients', this.patientId(), 'notes'] : ['/encounters']);
 

@@ -3,6 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { PatientApiService, PatientStore } from '@clinova/patient/data-access';
+import { Permissions } from '@clinova/auth';
 import type { Patient } from '@clinova/patient/domain';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -47,7 +48,8 @@ export class EditDemographicsDialog {
     preferredLanguage: new FormControl(this.patient.preferredLanguage ?? 'English'),
     occupation:        new FormControl(this.patient.occupation ?? ''),
     ethnicity:         new FormControl(this.patient.ethnicity ?? ''),
-    bloodType:         new FormControl(this.patient.bloodType as string ?? 'UNKNOWN'),
+    // Medical field: front desk and billing (limited access) can't change it.
+    bloodType:         new FormControl({ value: this.patient.bloodType as string ?? 'UNKNOWN', disabled: !inject(Permissions).can('patient:profiles', 'full') }),
   });
 
   private toDateInput(date: Date | string): string {

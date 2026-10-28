@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject, signal } from '@angular/core';
+import { Component, effect, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
@@ -10,7 +10,7 @@ import { MatTableModule } from '@angular/material/table';
 import type { Encounter } from '@clinova/clinical/domain';
 import { EncounterStatus } from '@clinova/clinical/domain';
 import { ClinicalStore } from '@clinova/clinical/data-access';
-import { AuthService } from '@clinova/auth';
+import { AuthService, Permissions } from '@clinova/auth';
 
 type StatusFilter = 'unsigned' | 'signed' | 'all';
 
@@ -37,11 +37,12 @@ export class EncountersPage {
 
   protected readonly columns = ['date', 'patient', 'provider', 'complaint', 'diagnosis', 'status'];
   protected readonly statusFilter = signal<StatusFilter>('unsigned');
-  protected readonly onlyMine = signal(this.auth.currentUser()?.role === 'PHYSICIAN');
+  private readonly perms = inject(Permissions);
+  protected readonly onlyMine = signal(this.perms.isProvider());
   protected readonly pageIndex = signal(0);
   protected readonly pageSize = signal(25);
 
-  protected readonly isPhysician = computed(() => this.auth.currentUser()?.role === 'PHYSICIAN');
+  protected readonly isPhysician = this.perms.isProvider;
 
   constructor() {
     effect(() => {

@@ -1,7 +1,11 @@
 import { inject } from '@angular/core';
 import { Route } from '@angular/router';
 import { BillingShellComponent } from './billing-shell/billing-shell.component';
+import { requirePermission } from '@clinova/auth';
 import { BillingPermissions } from './shared/billing-shared';
+
+const manage = requirePermission({ capability: 'billing:invoices', access: 'full' });
+const collect = requirePermission({ capability: 'billing:invoices', access: 'write' });
 
 export const BILLING_ROUTES: Route[] = [
   {
@@ -15,6 +19,7 @@ export const BILLING_ROUTES: Route[] = [
       },
       {
         path: 'dashboard',
+        canActivate: [manage],
         loadComponent: () => import('./billing-dashboard/billing-dashboard.component').then(m => m.BillingDashboardComponent),
       },
       {
@@ -23,6 +28,7 @@ export const BILLING_ROUTES: Route[] = [
       },
       {
         path: 'invoices/new',
+        canActivate: [manage],
         loadComponent: () => import('./invoice-new/invoice-new.component').then(m => m.InvoiceNewComponent),
       },
       {
@@ -31,6 +37,7 @@ export const BILLING_ROUTES: Route[] = [
       },
       {
         path: 'claims',
+        canActivate: [manage],
         loadComponent: () => import('./claims/claims.component').then(m => m.ClaimsComponent),
       },
       {
@@ -39,6 +46,7 @@ export const BILLING_ROUTES: Route[] = [
       },
       {
         path: 'statements/:patientId',
+        canActivate: [collect],
         loadComponent: () => import('./statement/statement.component').then(m => m.StatementComponent),
       },
     ],

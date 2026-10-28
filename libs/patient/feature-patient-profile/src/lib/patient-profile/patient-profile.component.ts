@@ -4,6 +4,7 @@ import { DatePipe } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
 import { PatientApiService, PatientStore } from '@clinova/patient/data-access';
+import { Permissions } from '@clinova/auth';
 import type { PatientId } from '@clinova/patient/domain';
 import { AlertSeverity } from '@clinova/patient/domain';
 import { MatButtonModule } from '@angular/material/button';
@@ -31,6 +32,7 @@ import { EditDemographicsDialog } from '../dialogs/edit-demographics-dialog/edit
 export class PatientProfileComponent {
   protected readonly store = inject(PatientStore);
   private readonly api = inject(PatientApiService);
+  protected readonly perms = inject(Permissions);
   private readonly dialog = inject(MatDialog);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);

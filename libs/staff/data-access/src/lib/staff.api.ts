@@ -1,105 +1,100 @@
 import { inject, Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import type {
-  StaffMember, StaffId, Provider, ProviderId,
-  Credential, CredentialId, TimeOffRequest, TimeOffId, TimeOffStatus,
-  DaySchedule, StaffFilters,
+  CredentialType,
+  DaySchedule,
+  ExpiringCredential,
+  StaffCredential,
+  StaffFilters,
+  StaffProfile,
+  StaffSummary,
 } from '@clinova/staff/domain';
 
-export interface CreateStaffDto {
-  userId: string;
+export interface CreateStaffInput {
+  email: string;
   firstName: string;
   lastName: string;
-  displayName: string;
-  workEmail: string;
+  role: string;
   title?: string;
-  directPhone?: string;
-  locationId?: string;
+  phone?: string;
 }
 
-export interface UpdateStaffDto {
-  title?: string;
+export interface StaffProfileInput {
+  title?: string | null;
+  suffix?: string | null;
   firstName?: string;
   lastName?: string;
-  displayName?: string;
-  directPhone?: string;
-  locationId?: string;
-  weeklySchedule?: DaySchedule[];
+  phone?: string | null;
+  officeLocation?: string | null;
+  npi?: string | null;
+  specialties?: string[];
+  bio?: string | null;
 }
 
-export interface CreateProviderDto extends CreateStaffDto {
-  npi: string;
-  specialties: string[];
-  defaultAppointmentDurationMinutes: number;
-  bufferBetweenAppointmentsMinutes: number;
+export interface CredentialInput {
+  type: CredentialType;
+  number: string;
+  issuingState?: string | null;
+  issuingAuthority?: string | null;
+  issueDate?: string | null;
+  expirationDate?: string | null;
+  isVerified?: boolean;
 }
 
 @Injectable({ providedIn: 'root' })
 export class StaffApiService {
   private readonly http = inject(HttpClient);
 
-  getStaff(filters: StaffFilters = {}): Observable<StaffMember[]> {
-    const params: Record<string, string> = {};
-    if (filters.isActive != null) params['isActive'] = String(filters.isActive);
-    if (filters.locationId) params['locationId'] = filters.locationId;
-    return this.http.get<StaffMember[]>('/api/staff', { params });
+  list(filters: StaffFilters = {}): Observable<StaffSummary[]> {
+    let params = new HttpParams();
+    for (const [key, value] of Object.entries(filters)) {
+      if (value) params = params.set(key, value);
+    }
+    return this.http.get<StaffSummary[]>('/api/staff', { params });
   }
 
-  getStaffById(id: StaffId): Observable<StaffMember> {
-    return this.http.get<StaffMember>(`/api/staff/${id}`);
+  get(id: string): Observable<StaffProfile> {
+    return this.http.get<StaffProfile>(`/api/staff/${id}`);
   }
 
-  createStaff(dto: CreateStaffDto): Observable<StaffMember> {
-    return this.http.post<StaffMember>('/api/staff', dto);
+  create(input: CreateStaffInput): Observable<{ profile: StaffProfile; temporaryPassword: string }> {
+    return this.http.post<{ profile: StaffProfile; temporaryPassword: string }>('/api/staff', input);
   }
 
-  updateStaff(id: StaffId, dto: UpdateStaffDto): Observable<StaffMember> {
-    return this.http.patch<StaffMember>(`/api/staff/${id}`, dto);
+  updateProfile(id: string, input: StaffProfileInput): Observable<StaffProfile> {
+    return this.http.patch<StaffProfile>(`/api/staff/${id}`, input);
   }
 
-  deactivateStaff(id: StaffId): Observable<void> {
-    return this.http.delete<void>(`/api/staff/${id}`);
+  updateAccount(id: string, input: { role?: string; isActive?: boolean }): Observable<StaffProfile> {
+    return this.http.patch<StaffProfile>(`/api/staff/${id}/account`, input);
   }
 
-  getProviders(filters: StaffFilters & { specialty?: string } = {}): Observable<Provider[]> {
-    const params: Record<string, string> = {};
-    if (filters.isActive != null) params['isActive'] = String(filters.isActive);
-    if (filters.specialty) params['specialty'] = filters.specialty;
-    return this.http.get<Provider[]>('/api/providers', { params });
+  resetPassword(id: string): Observable<{ temporaryPassword: string }> {
+    return this.http.post<{ temporaryPassword: string }>(`/api/staff/${id}/reset-password`, {});
   }
 
-  getProviderById(id: ProviderId): Observable<Provider> {
-    return this.http.get<Provider>(`/api/providers/${id}`);
+  unlock(id: string): Observable<StaffProfile> {
+    return this.http.post<StaffProfile>(`/api/staff/${id}/unlock`, {});
   }
 
-  createProvider(dto: CreateProviderDto): Observable<Provider> {
-    return this.http.post<Provider>('/api/providers', dto);
+  updateSchedule(id: string, schedule: ReadonlyArray<DaySchedule>): Observable<StaffProfile> {
+    return this.http.put<StaffProfile>(`/api/staff/${id}/schedule`, { schedule });
   }
 
-  updateProvider(id: ProviderId, dto: Partial<CreateProviderDto>): Observable<Provider> {
-    return this.http.patch<Provider>(`/api/providers/${id}`, dto);
+  addCredential(staffId: string, input: CredentialInput): Observable<StaffCredential> {
+    return this.http.post<StaffCredential>(`/api/staff/${staffId}/credentials`, input);
   }
 
-  addCredential(staffId: StaffId, credential: Omit<Credential, 'id'>): Observable<Credential> {
-    return this.http.post<Credential>(`/api/staff/${staffId}/credentials`, credential);
+  updateCredential(staffId: string, credentialId: string, input: CredentialInput): Observable<StaffCredential> {
+    return this.http.put<StaffCredential>(`/api/staff/${staffId}/credentials/${credentialId}`, input);
   }
 
-  updateCredential(staffId: StaffId, credentialId: CredentialId, updates: Partial<Omit<Credential, 'id'>>): Observable<Credential> {
-    return this.http.patch<Credential>(`/api/staff/${staffId}/credentials/${credentialId}`, updates);
+  removeCredential(staffId: string, credentialId: string): Observable<void> {
+    return this.http.delete<void>(`/api/staff/${staffId}/credentials/${credentialId}`);
   }
 
-  getTimeOffRequests(staffId?: StaffId): Observable<TimeOffRequest[]> {
-    const params: Record<string, string> = {};
-    if (staffId) params['staffId'] = staffId;
-    return this.http.get<TimeOffRequest[]>('/api/time-off', { params });
-  }
-
-  requestTimeOff(request: Omit<TimeOffRequest, 'id' | 'status' | 'reviewedBy' | 'reviewedAt' | 'createdAt'>): Observable<TimeOffRequest> {
-    return this.http.post<TimeOffRequest>('/api/time-off', request);
-  }
-
-  reviewTimeOff(id: TimeOffId, status: TimeOffStatus.Approved | TimeOffStatus.Denied): Observable<TimeOffRequest> {
-    return this.http.patch<TimeOffRequest>(`/api/time-off/${id}`, { status });
+  expiringCredentials(days = 90): Observable<ExpiringCredential[]> {
+    return this.http.get<ExpiringCredential[]>('/api/staff/credentials/expiring', { params: { days } });
   }
 }

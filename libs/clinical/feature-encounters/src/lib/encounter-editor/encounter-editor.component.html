@@ -20,7 +20,7 @@
     <section class="enc__main">
       <header class="enc__header">
         <div>
-          <span class="enc__overline">{{ editable() ? 'Active encounter' : 'Signed encounter' }}</span>
+          <span class="enc__overline">{{ isOpen() ? 'Active encounter' : 'Signed encounter' }}</span>
           <h1 class="enc__title">Clinical SOAP Note</h1>
           <p class="enc__meta">
             {{ enc.createdAt | date:'EEE, MMM d, y · h:mm a' }} · {{ enc.providerName }}
@@ -41,7 +41,7 @@
         }
       </header>
 
-      @if (!editable()) {
+      @if (!isOpen()) {
         <div class="enc__signed" role="note">
           <mat-icon>verified</mat-icon>
           <span>Signed by <strong>{{ enc.signedByName }}</strong> on {{ enc.signedAt | date:'MMM d, y · h:mm a' }}. This note is locked; changes require an addendum.</span>
@@ -278,11 +278,11 @@
         </mat-accordion>
       </form>
 
-      @if (enc.addenda.length || !editable()) {
+      @if (enc.addenda.length || !isOpen()) {
         <section class="enc__addenda" aria-label="Addenda">
           <div class="enc__addenda-header">
             <h3>Addenda</h3>
-            @if (!editable() && isPhysician()) {
+            @if (!isOpen() && isPhysician()) {
               <button mat-stroked-button type="button" (click)="openAddendumDialog()">
                 <mat-icon>note_add</mat-icon> Add addendum
               </button>

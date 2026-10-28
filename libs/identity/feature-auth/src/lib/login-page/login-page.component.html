@@ -9,6 +9,13 @@
     <h1 class="login__heading">Welcome back</h1>
     <p class="login__sub">Sign in to your staff account</p>
 
+    @if (notice && !error()) {
+      <div class="login__notice" role="status">
+        <mat-icon>schedule</mat-icon>
+        <span>{{ notice }}</span>
+      </div>
+    }
+
     @if (error()) {
       <div class="login__error">
         <mat-icon>error_outline</mat-icon>

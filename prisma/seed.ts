@@ -910,15 +910,90 @@ const FEE_SCHEDULE_LINES = [
   { cptCode: '99397', description: 'Preventive visit, established patient, age 65+', priceCents: 26000 },
 ];
 
-const STAFF_USERS = [
-  { email: 'admin@clinova.health',      password: 'Admin@2026',      firstName: 'Alex',    lastName: 'Rivera',   role: 'ADMIN' },
-  { email: 'dr.chen@clinova.health',    password: 'Doctor@2026',     firstName: 'Wei',     lastName: 'Chen',     role: 'PHYSICIAN' },
-  { email: 'dr.patel@clinova.health',   password: 'Doctor@2026',     firstName: 'Ananya',  lastName: 'Patel',    role: 'PHYSICIAN' },
-  { email: 'nurse.kim@clinova.health',  password: 'Nurse@2026',      firstName: 'Ji-Yeon', lastName: 'Kim',      role: 'NURSE' },
-  { email: 'reception@clinova.health',  password: 'Staff@2026',      firstName: 'Marcus',  lastName: 'Grant',    role: 'STAFF' },
-  { email: 'billing@clinova.health',    password: 'Billing@2026',    firstName: 'Bianca',  lastName: 'Flores',   role: 'BILLING' },
-];
+const DAY_MS = 86_400_000;
+const inDays = (n: number) => new Date(Date.now() + n * DAY_MS);
 
+/** Weekly schedule JSON (0 = Sunday). */
+function weekly(workDays: number[], start = '08:00', end = '17:00', lunch: [string, string] | null = ['12:00', '13:00']) {
+  return JSON.stringify(Array.from({ length: 7 }, (_, d) => {
+    const working = workDays.includes(d);
+    return {
+      dayOfWeek: d,
+      isWorking: working,
+      hours: working ? { start, end } : null,
+      lunchBreak: working && lunch ? { start: lunch[0], end: lunch[1] } : null,
+    };
+  }));
+}
+
+type SeedCredential = { type: string; number: string; issuingState?: string; issuingAuthority?: string; issuedDaysAgo?: number; expiresInDays?: number; isVerified?: boolean };
+
+// Credentials expire at varied offsets so the tracker and dashboard alerts have data.
+const STAFF_USERS: Array<{
+  email: string; password: string; firstName: string; lastName: string; role: string;
+  title?: string; suffix?: string; phone?: string; officeLocation?: string; npi?: string;
+  specialties?: string[]; bio?: string; schedule?: string; credentials?: SeedCredential[];
+}> = [
+  {
+    email: 'superadmin@clinova.health', password: 'Super@Admin2026', firstName: 'Jordan', lastName: 'Blake', role: 'SUPER_ADMIN',
+    phone: '(555) 010-0001', officeLocation: 'Administration, Suite 100', schedule: weekly([1, 2, 3, 4, 5]),
+    bio: 'IT and compliance lead. Owns system configuration, user provisioning, and HIPAA audit reviews.',
+  },
+  {
+    email: 'admin@clinova.health', password: 'Admin@2026', firstName: 'Alex', lastName: 'Rivera', role: 'ADMIN',
+    phone: '(555) 010-0002', officeLocation: 'Administration, Suite 100', schedule: weekly([1, 2, 3, 4, 5]),
+    bio: 'Practice manager responsible for scheduling, staffing, and front-office operations.',
+  },
+  {
+    email: 'dr.chen@clinova.health', password: 'Doctor@2026', firstName: 'Wei', lastName: 'Chen', role: 'PHYSICIAN',
+    title: 'Dr.', suffix: 'MD', phone: '(555) 010-0101', officeLocation: 'Clinic A, Room 204', npi: '1467582930',
+    specialties: ['Internal Medicine', 'Cardiology'], schedule: weekly([1, 2, 3, 4, 5], '08:00', '17:00'),
+    bio: 'Board-certified internist with a focus on cardiovascular risk management and chronic disease care.',
+    credentials: [
+      { type: 'MEDICAL_LICENSE', number: 'A-128734', issuingState: 'CA', issuingAuthority: 'Medical Board of California', issuedDaysAgo: 2900, expiresInDays: 410, isVerified: true },
+      { type: 'DEA', number: 'BC4829173', issuingAuthority: 'U.S. Drug Enforcement Administration', issuedDaysAgo: 1070, expiresInDays: 25, isVerified: true },
+      { type: 'BOARD_CERTIFICATION', number: 'ABIM-339201', issuingAuthority: 'American Board of Internal Medicine', issuedDaysAgo: 2200, expiresInDays: 1450, isVerified: true },
+      { type: 'NPI', number: '1467582930', issuingAuthority: 'CMS NPPES', issuedDaysAgo: 4000, isVerified: true },
+      { type: 'MALPRACTICE', number: 'MP-55-20931', issuingAuthority: 'Golden State Mutual', issuedDaysAgo: 360, expiresInDays: 5, isVerified: true },
+    ],
+  },
+  {
+    email: 'dr.patel@clinova.health', password: 'Doctor@2026', firstName: 'Ananya', lastName: 'Patel', role: 'PHYSICIAN',
+    title: 'Dr.', suffix: 'DO', phone: '(555) 010-0102', officeLocation: 'Clinic B, Room 112', npi: '1730594826',
+    specialties: ['Family Medicine', 'Pediatrics'], schedule: weekly([2, 3, 4, 5, 6], '09:00', '18:00', ['12:30', '13:30']),
+    bio: 'Family physician caring for patients of all ages, with special interest in preventive care and pediatrics.',
+    credentials: [
+      { type: 'MEDICAL_LICENSE', number: 'O-77412', issuingState: 'CA', issuingAuthority: 'Osteopathic Medical Board of California', issuedDaysAgo: 1400, expiresInDays: 62, isVerified: true },
+      { type: 'DEA', number: 'BP7731025', issuingAuthority: 'U.S. Drug Enforcement Administration', issuedDaysAgo: 400, expiresInDays: 690, isVerified: true },
+      { type: 'BOARD_CERTIFICATION', number: 'ABFM-118204', issuingAuthority: 'American Board of Family Medicine', issuedDaysAgo: 1800, expiresInDays: 1100, isVerified: true },
+      { type: 'NPI', number: '1730594826', issuingAuthority: 'CMS NPPES', issuedDaysAgo: 3000, isVerified: true },
+    ],
+  },
+  {
+    email: 'nurse.kim@clinova.health', password: 'Nurse@2026', firstName: 'Ji-Yeon', lastName: 'Kim', role: 'NURSE',
+    suffix: 'RN', phone: '(555) 010-0201', officeLocation: 'Clinic A, Nursing station', specialties: ['Triage', 'Chronic Care Management'],
+    schedule: weekly([1, 2, 3, 4], '07:00', '17:30', ['11:30', '12:00']),
+    bio: 'Registered nurse coordinating triage, vitals, and care-management follow-ups.',
+    credentials: [
+      { type: 'MEDICAL_LICENSE', number: 'RN-95120384', issuingState: 'CA', issuingAuthority: 'California Board of Registered Nursing', issuedDaysAgo: 600, expiresInDays: 130, isVerified: true },
+      { type: 'BLS', number: 'BLS-AHA-662091', issuingAuthority: 'American Heart Association', issuedDaysAgo: 733, expiresInDays: -3, isVerified: true },
+    ],
+  },
+  {
+    email: 'reception@clinova.health', password: 'Staff@2026', firstName: 'Marcus', lastName: 'Grant', role: 'STAFF',
+    phone: '(555) 010-0301', officeLocation: 'Front desk', schedule: weekly([1, 2, 3, 4, 5], '07:30', '16:30'),
+    credentials: [
+      { type: 'BLS', number: 'BLS-AHA-710442', issuingAuthority: 'American Heart Association', issuedDaysAgo: 650, expiresInDays: 80 },
+    ],
+  },
+  {
+    email: 'billing@clinova.health', password: 'Billing@2026', firstName: 'Bianca', lastName: 'Flores', role: 'BILLING',
+    phone: '(555) 010-0401', officeLocation: 'Billing office, Suite 120', specialties: ['Medical Coding', 'Claims'], schedule: weekly([1, 2, 3, 4, 5]),
+    credentials: [
+      { type: 'OTHER', number: 'CPC-01984425', issuingAuthority: 'AAPC (Certified Professional Coder)', issuedDaysAgo: 500, expiresInDays: 230, isVerified: true },
+    ],
+  },
+];
 // ─── encounter templates & sample notes ────────────────────────────────────
 
 const ENCOUNTER_TEMPLATES = [
@@ -1109,6 +1184,8 @@ async function main() {
   await prisma.appointment.deleteMany({});
   await prisma.appointmentType.deleteMany({});
   await prisma.patient.deleteMany({});
+  await prisma.auditLog.deleteMany({});
+  await prisma.staffCredential.deleteMany({});
   await prisma.staff.deleteMany({});
 
   console.log(`🌱 Seeding ${patients.length} patients…\n`);
@@ -1129,8 +1206,22 @@ async function main() {
   console.log('\n👥 Seeding staff users…\n');
   for (const u of STAFF_USERS) {
     const passwordHash = await bcrypt.hash(u.password, 10);
-    await prisma.staff.create({ data: { email: u.email, passwordHash, firstName: u.firstName, lastName: u.lastName, role: u.role } });
-    console.log(`  ✓ [${u.role.padEnd(9)}]  ${u.firstName} ${u.lastName}  <${u.email}>  pw: ${u.password}`);
+    await prisma.staff.create({
+      data: {
+        email: u.email, passwordHash, firstName: u.firstName, lastName: u.lastName, role: u.role,
+        title: u.title ?? null, suffix: u.suffix ?? null, phone: u.phone ?? null, officeLocation: u.officeLocation ?? null,
+        npi: u.npi ?? null, specialtiesJson: JSON.stringify(u.specialties ?? []), bio: u.bio ?? null,
+        scheduleJson: u.schedule ?? weekly([1, 2, 3, 4, 5]),
+        credentials: {
+          create: (u.credentials ?? []).map(c => ({
+            type: c.type, number: c.number, issuingState: c.issuingState ?? null, issuingAuthority: c.issuingAuthority ?? null,
+            issueDate: c.issuedDaysAgo !== undefined ? inDays(-c.issuedDaysAgo) : null,
+            expirationDate: c.expiresInDays !== undefined ? inDays(c.expiresInDays) : null,
+            isVerified: c.isVerified ?? false,
+          })),
+        },
+      },
+    });    console.log(`  ✓ [${u.role.padEnd(9)}]  ${u.firstName} ${u.lastName}  <${u.email}>  pw: ${u.password}`);
   }
   console.log(`\n✅ Seeded ${STAFF_USERS.length} staff users successfully.`);
 
